@@ -30,23 +30,23 @@ def _get_db_connection():
 def generate_new_token(user_id):
     return None
 
-
-""" 
-reg_info: dictionary contained all info need to reg, which are:
-    email
-    password_hash
-    name_last
-    name_first
-    address_first_line
-    address_second_line
-    address_city
-    address_state
-    address_zip_code
-    address_country_code
-"""
-
 Duplicate_Entry_ErrorCode = 1062
 def add_new_user(reg_info):
+    """Add a new user to the DB
+
+           :param dict reg_info: dictionary contained all info need to reg, which are:
+            email
+            password_hash
+            name_last
+            name_first
+            address_first_line
+            address_second_line
+            address_city
+            address_state
+            address_zip_code
+            address_country_code
+   """
+
     conn = _get_db_connection()
     cur = conn.cursor()
 
