@@ -17,11 +17,11 @@ def hello_world():  # put application's code here
     return 'Hello World!'
 
 def user_args_from_route():
-    name = request.args.get("name")
-    email = request.args.get("email")
-    password = request.args.get("password")
-
-    return name, email, password
+    return {field: request.args.get(field) for field in (
+        "name",
+        "email",
+        "password"
+    )}
 
 def address_args_from_route():
     return {field: request.args.get(field) for field in (
@@ -33,23 +33,22 @@ def address_args_from_route():
         "address_country_code"
     )}
 
-
 @app.route('/users', methods=['POST', 'GET'])
 def users_route():
     """
     GET := Returns all users that satisfy params
     POST := Creates a user with name, email and password
     """
-    name, email, password = user_args_from_route()
+    user_params = user_args_from_route()
     address_params = address_args_from_route()
 
     if request.method == 'POST':
-        res = UserResource.create(name = name, email = email, password = password)
-        rsp = Response(json.dump(res), status=res['status'], content_type="application/json")
+        res = UserResource.create(user_params)
+        rsp = Response(json.dumps(res), status=res['status'], content_type="application/json")
         return rsp
 
     if request.method == 'GET':
-        res = UserResource.find(name, email, password, **address_params)
+        res = UserResource.find(user_args = user_params, address_args = address_params)
         rsp = Response(json.dumps(res), status=res['status'], content_type="application/json")
         return rsp
 
@@ -60,18 +59,18 @@ def user_by_id_route(_id: str):
     PUT := updates the user
     DELETE := removes the user
     """
-    name, email, password = user_args_from_route()
+    user_params = user_args_from_route()
 
     if request.method == 'GET':
         res = UserResource.find_by_id(_id)
         rsp = Response(json.dumps(res), status=res['status'], content_type="application/json")
         return rsp
     if request.method == 'PUT':
-        res = UserResource.update(_id, name, email, password)
+        res = UserResource.update(_id, user_params)
         rsp = Response(json.dumps(res), status=res['status'], content_type="application/json")
         return rsp 
     if request.method == 'DELETE':
-        res = UserResource.delete(_id, password)
+        res = UserResource.delete(_id, user_params["password"])
         rsp = Response(json.dumps(res), status=res['status'], content_type="application/json")
         return rsp 
 
