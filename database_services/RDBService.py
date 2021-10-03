@@ -51,20 +51,28 @@ def add_new_user(reg_info):
     cur = conn.cursor()
 
     sql = "INSERT INTO " + DB_SCHEMA +"."+ DB_USER_TABLE + " (userID, pwHash, nameLast, nameFirst, email, addressID) " \
-          "VALUES ('DEFAULT', 'ASDASWQWE', 'Skagen', 'Stavang', 'test233@gmail.com', '987');"
-    print("SQL Statement = " + cur.mogrify(sql, None))
+          "VALUES (%s, %s, %s, %s, %s, %s);"
+    params = ('DEFAULT', reg_info['password_hash'], reg_info['name_last'], reg_info['name_first'], reg_info['email'], 'NULL')
+    print("SQL Statement = " + cur.mogrify(sql, params))
+
+    # Try to add user to DB
     try:
-        res = cur.execute(sql)
-        #res = cur.fetchall()
+        res = cur.execute(sql, params)
         conn.commit()
-        print(res)
     except pymysql.Error as e:
         print("SQL exception: ", e)
         if e.args[0] == Duplicate_Entry_ErrorCode:
             print("Duplicate entry (probably email)")
-            pass
+            raise email_already_exist("email_already_exist")
+            return None
 
     finally:
         conn.close()
 
-    return False
+    #Add success
+    #Add
+
+    return  None
+
+class email_already_exist(Exception):
+    pass
