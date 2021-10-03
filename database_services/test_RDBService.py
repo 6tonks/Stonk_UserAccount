@@ -1,19 +1,41 @@
 import database_services.RDBService as db_service
 
-try:
-    db_service.add_new_user(
-        {
-            "email": "teset@gg.com",
-            "password_hash": "sdgbfsgbdf",
-            "name_last": "Leo",
-            "name_first": "FASD",
-            "address_first_line": "ASDW",
-            "address_second_line": "ASD",
-            "address_city": "ASD",
-            "address_state": "ASD",
-            "address_zip_code": "ASD",
-            "address_country_code": "ASD"
-        }
+def test_insert():
+    try:
+        db_service.insert_new_record("Stonk","User",
+            {
+                "userID": 'DEFAULT',
+                "email": "teset2ss33@gg.com",
+                "pwHash": "sdgbfsgbdf",
+                "nameLast": "Leo233",
+                "nameFirst": "FASD",
+                "addressID": "DEFAULT"
+            }
+        )
+    except Exception as e:
+        print("exception raised: ", e)
+
+def test_update_record_with_keys():
+    db_service.update_record_with_keys("Stonk", "User",
+                                              {"userID": "2"},
+                                              {"nameFirst": "mrUpdated", "nameLast": "updatedlastName"}
     )
-except db_service.email_already_exist as e:
-    print("exception raised: ",e)
+
+def test_get_by_key():
+    r = db_service.get_by_key("Stonk", "User",
+                                {"userID": "4"},
+                                ["nameFirst", "nameLast"]
+    )
+    print(r)
+
+    r = db_service.get_by_key("Stonk", "User",
+                              {"userID": "4"},
+                                None
+                              )
+    print(r)
+
+#test_insert();
+#test_update_record_with_keys()
+#test_get_by_key()
+
+

@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 
 # config
-config/db_config.json
+config/db_config.py
 
 # C extensions
 *.so
