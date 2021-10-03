@@ -43,13 +43,13 @@ def users_route():
     address_params = address_args_from_route()
 
     if request.method == 'POST':
-        res = UserResource.create(user_params)
-        rsp = Response(json.dumps(res), status=res['status'], content_type="application/json")
+        res, status = UserResource.create(user_args = user_params, address_args = address_params)
+        rsp = Response(json.dumps(res), status=status, content_type="application/json")
         return rsp
 
     if request.method == 'GET':
-        res = UserResource.find(user_args = user_params, address_args = address_params)
-        rsp = Response(json.dumps(res), status=res['status'], content_type="application/json")
+        res, status = UserResource.find(user_args = user_params, address_args = address_params)
+        rsp = Response(json.dumps(res), status=status, content_type="application/json")
         return rsp
 
 @app.route('/users/<string:_id>', methods=['GET', 'PUT', 'DELETE'])
@@ -62,16 +62,16 @@ def user_by_id_route(_id: str):
     user_params = user_args_from_route()
 
     if request.method == 'GET':
-        res = UserResource.find_by_id(_id)
-        rsp = Response(json.dumps(res), status=res['status'], content_type="application/json")
+        res, status = UserResource.find_by_id(_id)
+        rsp = Response(json.dumps(res), status=status, content_type="application/json")
         return rsp
     if request.method == 'PUT':
-        res = UserResource.update(_id, user_params)
-        rsp = Response(json.dumps(res), status=res['status'], content_type="application/json")
+        res, status = UserResource.update(_id, user_params)
+        rsp = Response(json.dumps(res), status=status, content_type="application/json")
         return rsp 
     if request.method == 'DELETE':
-        res = UserResource.delete(_id, user_params["password"])
-        rsp = Response(json.dumps(res), status=res['status'], content_type="application/json")
+        res, status = UserResource.delete(_id, user_params["password"])
+        rsp = Response(json.dumps(res), status=status, content_type="application/json")
         return rsp 
 
 @app.route('/users/<string:_id>/addresses', methods=['GET', 'PUT', 'DELETE'])
