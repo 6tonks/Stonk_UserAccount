@@ -1,62 +1,12 @@
 
 from typing import Dict, List, Optional
-
 from database_services.BaseUserModel import BaseUserModel, UserEmailExistsException
+from database_services.BaseAddressModel import BaseAddressModel
 
-#----------TESTING ONLY------------------
-USERS = {}
+from dataclasses import dataclass
 
-class UsersModel(BaseUserModel):
-
-    @classmethod
-    def create(cls, name, email, password_hash):
-        if any(user['email'] == email for user in USERS.values()):
-            raise UserEmailExistsException()
-
-        new_user = {"id": len(USERS), "name": name, "email": email, "pwHash": password_hash}
-        USERS[new_user['id']] = new_user
-        return new_user
-
-    @classmethod
-    def find_by_template(cls, template):
-        return [user for user in USERS.values() if all(user[key] == value\
-             for key, value in template.items() if value is not None)]
-
-    @classmethod
-    def find_by_address(cls, user_args: Dict[str, str], address_args: Dict[str, str]) \
-            -> List[Dict[str, str]]:
-        raise NotImplementedError()
-
-    @classmethod
-    def update(cls, _id: str, user_args: Dict[str, str]) -> Dict[str, str]:
-        if int(_id) not in USERS:
-            return
-
-        user = USERS[int(_id)]
-        user.update(user_args)
-        return user
-
-    @classmethod
-    def delete(cls, _id: str) -> None:
-        if int(_id) not in USERS:
-            return
-
-        del USERS[_id]
-        return
-
-#------------------------------------------
-
-class PasswordValidator:
-    
-    @classmethod
-    def is_valid(cls, password:str, **params) -> bool:
-        return len(password) < 256 and len(password) > 4
-
-class PasswordEncrytor:
-    
-    @classmethod
-    def encrypt(cls, password:str, **params) -> str:
-        return password[::-1]
+from password_encryption import PasswordEncrytor
+from password_validation import PasswordValidator
 
 class UserResourceException(Exception):
     @classmethod
@@ -112,10 +62,24 @@ class UserNotFound(UserResourceException):
     def description(cls):
         return ""
 
+@dataclass
 class UserResource:
+    user_model: BaseUserModel
+    address_model: BaseAddressModel
 
     @classmethod
-    def create(cls, user_args, address_args = {}):
+    def clean_users(cls, users):
+        for user in users:
+            if 'pwHash' in user:
+                del user['pwHash']
+        return users
+
+    @classmethod
+    def clean_user(cls, user):
+        del user['pwHash']
+        return user
+
+    def create(self, user_args, address_args = {}):
 
         # All fields in user args must be filled in
         if any(field is None for field in user_args.values()):
@@ -128,15 +92,14 @@ class UserResource:
 
         password_hash = PasswordEncrytor.encrypt(password)
         try:
-            user = UsersModel.create(user_args['name'], user_args['email'], password_hash)
-            return user, 201
+            user = self.user_model.create(user_args['name'], user_args['email'], password_hash)
+            return self.clean_user(user), 201
         except UserEmailExistsException:
             return AlreadyTakenValue.response(
                 message_args={'name': 'email'}, 
                 description_args={'name':'email', 'value': user_args['email']}), 404
 
-    @classmethod
-    def find(cls, user_args = {}, address_args = {}):
+    def find(self, user_args = {}, address_args = {}):
         if "password" in user_args and user_args["password"] is not None:
             password = user_args["password"]
             password_hash = PasswordEncrytor.encrypt(password)
@@ -146,29 +109,36 @@ class UserResource:
         user_args = {f:v for f, v in user_args.items() if v is not None}
         address_args = {f:v for f, v in address_args.items() if v is not None}
         if len(address_args) == 0:
-            users = UsersModel.find_by_template(user_args)
+            users = self.user_model.find_by_template(user_args)
         else:
-            users = UsersModel.find_by_address(user_args = user_args, address_args = address_args)
+            users = self.user_model.find_by_address(user_args = user_args, address_args = address_args)
+        return {"users": self.clean_users(users)}, 200
 
-        for user in users:
-            del user['pwHash']
-        return {"users": users}, 200
-
-    @classmethod
-    def find_by_id(cls, _id):
-        users, status = cls.find(user_args = {'id': _id})
+    def find_by_id(self, _id):
+        users, status = self.find(user_args = {'id': _id})
         if status == 200 and len(users) == 1:
-            return users['users'][0], 200
+            return self.clean_user(users['users'][0]), 200
         elif status == 200:
             return UserNotFound.response(), 404
         return users, status
     
-    @classmethod
-    def update(cls, _id, user_args):
-        user = UsersModel.update(_id, user_args)
-        return user, 200
+    def update(self, _id, user_args):
+        user = self.user_model.update(_id, user_args)
+        return self.clean_user(user), 200
     
-    @classmethod
-    def delete(cls, _id, password):
-        user = UsersModel.delete(_id)
+    def delete(self, _id, password):
+        user = self.user_model.delete(_id)
         return user, 200
+
+    def find_address(self, _id):
+        address = self.user_model.find_address(_id)
+        return address, 200
+
+    def update_address(self, _id, address_args):
+        address = self.user_model.find_address(_id)
+        new_address = self.address_model.update(address['id'], address_args)
+        return new_address, 200
+    
+    def delete_address(self, _id, password):
+        user = self.user_model.delete_address(_id)
+        return self.clean_user(user), 200

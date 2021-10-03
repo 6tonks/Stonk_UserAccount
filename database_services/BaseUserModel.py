@@ -24,14 +24,14 @@ class BaseUserModel(ABC):
         raise NotImplementedError
 
     @abstractclassmethod
-    def find_by_address(cls, user_args: Dict[str, str], address_args: Dict[str, str]) \
-            -> List[Dict[str, str]]:
-        raise NotImplementedError()
-
-    @abstractclassmethod
     def update(cls, _id: str, user_args: Dict[str, str]) -> Dict[str, str]:
         raise NotImplementedError()
 
     @abstractclassmethod
     def delete(cls, _id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractclassmethod
+    def find_by_address(cls, user_args: Dict[str, str], address_args: Dict[str, str]) \
+            -> List[Dict[str, str]]:
         raise NotImplementedError()

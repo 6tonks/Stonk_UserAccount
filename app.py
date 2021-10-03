@@ -11,6 +11,9 @@ logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
 
+from application_services.UserResource.unit_tests.TestUserModel import TestUserModel
+from application_services.AddressResource.unit_tests.TestAddressModel import TestAddressModel
+user_resource = UserResource(TestUserModel(), TestAddressModel())
 
 @app.route('/')
 def hello_world():  # put application's code here
@@ -43,12 +46,12 @@ def users_route():
     address_params = address_args_from_route()
 
     if request.method == 'POST':
-        res, status = UserResource.create(user_args = user_params, address_args = address_params)
+        res, status = user_resource.create(user_args = user_params, address_args = address_params)
         rsp = Response(json.dumps(res), status=status, content_type="application/json")
         return rsp
 
     if request.method == 'GET':
-        res, status = UserResource.find(user_args = user_params, address_args = address_params)
+        res, status = user_resource.find(user_args = user_params, address_args = address_params)
         rsp = Response(json.dumps(res), status=status, content_type="application/json")
         return rsp
 
@@ -62,22 +65,37 @@ def user_by_id_route(_id: str):
     user_params = user_args_from_route()
 
     if request.method == 'GET':
-        res, status = UserResource.find_by_id(_id)
+        res, status = user_resource.find_by_id(_id)
         rsp = Response(json.dumps(res), status=status, content_type="application/json")
         return rsp
     if request.method == 'PUT':
-        res, status = UserResource.update(_id, user_params)
+        res, status = user_resource.update(_id, user_params)
         rsp = Response(json.dumps(res), status=status, content_type="application/json")
         return rsp 
     if request.method == 'DELETE':
-        res, status = UserResource.delete(_id, user_params["password"])
+        res, status = user_resource.delete(_id, user_params["password"])
         rsp = Response(json.dumps(res), status=status, content_type="application/json")
         return rsp 
 
 @app.route('/users/<string:_id>/addresses', methods=['GET', 'PUT', 'DELETE'])
 def user_address_route(_id):
-    # TO DO
-    pass
+    if request.method == 'GET':
+        res, status = user_resource.find_address(_id)
+        rsp = Response(json.dumps(res), status=status, content_type="application/json")
+        return rsp
+
+    if request.method == 'PUT':
+        address_params = address_args_from_route()
+        res, status = user_resource.update_address(_id, address_params)
+        rsp = Response(json.dumps(res), status=status, content_type="application/json")
+        return rsp 
+
+    if request.method == 'DELETE':
+        user_params = user_args_from_route()
+        res, status = user_resource.delete_address(_id, user_params["password"])
+        rsp = Response(json.dumps(res), status=status, content_type="application/json")
+        return rsp 
+
 
 @app.route('/addresses', methods=['GET', 'PUT', 'DELETE'])
 def addresses_route():
