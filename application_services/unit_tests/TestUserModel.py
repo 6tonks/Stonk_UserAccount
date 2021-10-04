@@ -3,6 +3,25 @@ from database_services.BaseUserModel import BaseUserModel, UserEmailExistsExcept
 
 USERS = {}
 
+def clear_users():
+    for k in USERS.keys():
+        del USERS[k]
+
+def populate_db_scenario1():
+    clear_users()
+    USERS['1'] = {
+        "lastName": "Bar", 
+        "firstName": "Foo", 
+        "email": "foobar@gmail.com", 
+        "pwHash": ''
+    }
+    USERS['2'] = {
+        "lastName": "Car", 
+        "firstName": "Foo", 
+        "email": "foocar@gmail.com", 
+        "pwHash": ''
+    }
+
 class TestUserModel(BaseUserModel):
 
     @classmethod
