@@ -25,11 +25,12 @@ def populate_db_scenario1():
 class TestUserModel(BaseUserModel):
 
     @classmethod
-    def create(cls, name, email, password_hash):
-        if any(user['email'] == email for user in USERS.values()):
+    def create(cls, create_args):
+        if any(user['email'] == create_args['email'] for user in USERS.values()):
             raise UserEmailExistsException()
 
-        new_user = {"id": len(USERS), "name": name, "email": email, "pwHash": password_hash}
+        new_user = create_args.copy()
+        new_user["id"] = str(len(USERS))
         USERS[new_user['id']] = new_user
         return new_user
 
@@ -43,7 +44,7 @@ class TestUserModel(BaseUserModel):
         if int(_id) not in USERS:
             return
 
-        user = USERS[int(_id)]
+        user = USERS[_id]
         user.update(user_args)
         return user
 
@@ -52,7 +53,7 @@ class TestUserModel(BaseUserModel):
         if int(_id) not in USERS:
             return
 
-        del USERS[int(_id)]
+        del USERS[_id]
         return
 
     @classmethod
