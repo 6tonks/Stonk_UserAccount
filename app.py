@@ -11,8 +11,8 @@ logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
 
-from application_services.UserResource.unit_tests.TestUserModel import TestUserModel
-from application_services.AddressResource.unit_tests.TestAddressModel import TestAddressModel
+from application_services.unit_tests.TestUserModel import TestUserModel
+from application_services.unit_tests.TestAddressModel import TestAddressModel
 user_resource = UserResource(TestUserModel(), TestAddressModel())
 
 @app.route('/')
@@ -21,7 +21,8 @@ def hello_world():  # put application's code here
 
 def user_args_from_route():
     return {field: request.args.get(field) for field in (
-        "name",
+        "firstName",
+        "lastName",
         "email",
         "password"
     )}
@@ -41,12 +42,14 @@ def users_route():
     """
     GET := Returns all users that satisfy params
     POST := Creates a user with name, email and password
+
+    Currently also handles signup through POST
     """
     user_params = user_args_from_route()
     address_params = address_args_from_route()
 
     if request.method == 'POST':
-        res, status = user_resource.create(user_args = user_params, address_args = address_params)
+        res, status = user_resource.create(user_args = user_params)
         rsp = Response(json.dumps(res), status=status, content_type="application/json")
         return rsp
 
@@ -110,6 +113,12 @@ def address_by_id_route(_id):
 
 @app.route('/addresses/<string:_id>/users', methods=['GET'])
 def users_in_address_route(_id):
+    # TO DO
+    pass
+
+# Routes for sign_in and sign_out
+@app.route('/users/<string:_id>/session', methods=['GET', 'POST', 'DELETE'])
+def sign_in(_id):
     # TO DO
     pass
 
