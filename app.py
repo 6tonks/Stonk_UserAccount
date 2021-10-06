@@ -1,4 +1,4 @@
-from flask import Flask, Response, request, url_for
+from flask import Flask, Response, request
 
 from application_services.UserResource.user_service import UserResource
 from application_services.Authentication.authentication_service import Authenticator
@@ -12,10 +12,11 @@ logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
 
-from application_services.tests.TestUserModel import TestUserModel
+#from application_services.tests.TestUserModel import TestUserModel
+from application_services.UserResource.Model.RDSUserModel import RDSUserModel
 from application_services.tests.TestAddressModel import TestAddressModel
 from application_services.tests.TestTokenModel import TestTokenModel
-user_resource = UserResource(TestUserModel(), TestAddressModel())
+user_resource = UserResource(RDSUserModel(), TestAddressModel())
 authenticator = Authenticator(TestTokenModel)
 @app.route('/')
 def hello_world():  # put application's code here

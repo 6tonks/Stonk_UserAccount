@@ -1,5 +1,5 @@
 from typing import Dict, List
-from database_services.BaseUserModel import BaseUserModel, UserEmailExistsException
+from application_services.UserResource.Model.BaseUserModel import BaseUserModel, UserEmailExistsException
 
 USERS = {}
 

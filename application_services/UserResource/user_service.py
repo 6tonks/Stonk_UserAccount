@@ -1,8 +1,8 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Tuple
 from dataclasses import dataclass
 
-from application_services.BaseResource import BaseResource, InvalidArguement, ResourceError, ResourceErrorCollection
-from database_services.BaseUserModel import BaseUserModel, UserEmailExistsException
+from application_services.BaseResource import BaseResource, ResourceError, ResourceErrorCollection
+from application_services.UserResource.Model.BaseUserModel import BaseUserModel, UserEmailExistsException
 from database_services.BaseAddressModel import BaseAddressModel
 
 from application_services.UserResource.password_encryption import PasswordEncrytor
