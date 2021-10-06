@@ -82,7 +82,7 @@ def add_new_user(reg_info):
 
     print(LOG_PREFIX, "User Address Link Success")
     print(LOG_PREFIX, "Returning User Record")
-    user_record = d_service.get_by_key("Stonk", "User", {"userID": str(user_PK)})
+    user_record = d_service.get_by_template("Stonk", "User", {"userID": str(user_PK)})
 
     token = refresh_token(str(user_PK))
 
@@ -96,7 +96,7 @@ class email_not_found(Exception):
     pass
 
 def validate_existing_user(email, password_hash):
-    r = d_service.get_by_key("Stonk", "User",{"email": email})
+    r = d_service.get_by_template("Stonk", "User", {"email": email})
 
     if(len(r) == 0):
         raise email_not_found("email_not_found")
@@ -117,7 +117,7 @@ def generate_new_token():
 
 def refresh_token(user_id, exp_time_in_seconds = 7200):
     print(LOG_PREFIX, "Refreshing token for: ", user_id)
-    r = d_service.get_by_key("Stonk", "Token", {"userID": user_id})
+    r = d_service.get_by_template("Stonk", "Token", {"userID": user_id})
     new_token = generate_new_token()
 
     exp_date_time = datetime.datetime.now() + datetime.timedelta(seconds=exp_time_in_seconds)

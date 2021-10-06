@@ -22,16 +22,16 @@ def test_update_record_with_keys():
     )
 
 def test_get_by_key():
-    r = db_service.get_by_key("Stonk", "User",
-                                {"userID": "4"},
-                                ["nameFirst", "nameLast"]
-    )
+    r = db_service.get_by_template("Stonk", "User",
+                                   {"userID": "4"},
+                                   ["nameFirst", "nameLast"]
+                                   )
     print(r)
 
-    r = db_service.get_by_key("Stonk", "User",
-                              {"userID": "4"},
-                                None
-                              )
+    r = db_service.get_by_template("Stonk", "User",
+                                   {"userID": "4"},
+                                   None
+                                   )
     print(r)
 
 #test_insert();

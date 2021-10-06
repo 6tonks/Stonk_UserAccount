@@ -110,7 +110,7 @@ def update_record_with_keys(db_schema, table_name, keys, record):
     conn.close()
     logger.debug("Update Success")
 
-def get_by_key(db_schema, table_name, keys, fields = None):
+def get_by_template(db_schema, table_name, keys, fields = None):
     conn = _get_db_connection()
     cur = conn.cursor()
 
