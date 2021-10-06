@@ -143,14 +143,13 @@ class UserResource(BaseResource):
             return False, None, ResourceErrorCollection(NoAccountWithEmail(user_args['email']))
         user = users.pop()
 
-        suc, errors = self.verify_password(user['id'], user_args['password'])
-        if not suc:
-            return False, None, errors
+        user_password = user_args['password']
+        user_password_hash = user['pwHash']
+        print(user_password_hash)
+        if not PasswordEncrytor.validate(user_password, user_password_hash):
+            return False, None, ResourceErrorCollection(IncorrectPassword())
 
-        suc, users, error = self._find(user_args)
-        if not suc:
-            return False, None, errors
-        return True, users[0], None
+        return True, user, None
 
     def _find(self, user_args = {}, address_args = {}):
         if "password" in user_args and user_args["password"] is not None:
