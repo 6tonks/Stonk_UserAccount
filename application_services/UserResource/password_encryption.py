@@ -8,4 +8,4 @@ class PasswordEncrytor:
 
     @classmethod
     def validate(cls, password:str, password_hash:str):
-        return bcrypt.checkpw(password.encode('utf-8'), password_hash)
+        return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))

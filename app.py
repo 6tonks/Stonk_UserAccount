@@ -15,9 +15,10 @@ app = Flask(__name__)
 #from application_services.tests.TestUserModel import TestUserModel
 from application_services.UserResource.Model.RDSUserModel import RDSUserModel
 from application_services.tests.TestAddressModel import TestAddressModel
-from application_services.tests.TestTokenModel import TestTokenModel
+#from application_services.Authentication.Model.TestTokenModel import TestTokenModel
+from application_services.Authentication.Model.RDSTokenModel import RDSTokenModel
 user_resource = UserResource(RDSUserModel(), TestAddressModel())
-authenticator = Authenticator(TestTokenModel)
+authenticator = Authenticator(RDSTokenModel)
 @app.route('/')
 def hello_world():  # put application's code here
     return 'Hello World!'

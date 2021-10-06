@@ -16,7 +16,7 @@ class Authenticator(BaseResource):
         if not suc:
             return errors.response(), 400
 
-        res = {"Authentication Token": self.token_model.create(user['id'])}
+        res = {"Authentication Token": self.token_model.create(user['userID'])}
         return res, 200
 
 

@@ -1,4 +1,4 @@
-from database_services.BaseTokenModel import BaseTokenModel
+from application_services.Authentication.Model.BaseTokenModel import BaseTokenModel
 import random
 
 TOKENS = {}
