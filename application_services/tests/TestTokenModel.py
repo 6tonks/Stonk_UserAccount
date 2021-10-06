@@ -1,7 +1,8 @@
+from database_services.BaseTokenModel import BaseTokenModel
 import random
 
 TOKENS = {}
-class TestTokenModel:
+class TestTokenModel(BaseTokenModel):
 
     @classmethod
     def create(cls, id):
