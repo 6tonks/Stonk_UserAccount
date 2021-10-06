@@ -1,4 +1,4 @@
-import user_service_db_operation as user_service_db
+from application_services.tests.legacy import user_service_db_operation as user_service_db
 import string
 import random
 import logging
