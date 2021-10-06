@@ -32,11 +32,13 @@ class TestUserModel(BaseUserModel):
         new_user = create_args.copy()
         new_user["id"] = str(len(USERS))
         USERS[new_user['id']] = new_user
-        return new_user
+        if "pwHash" not in new_user:
+            raise Exception(f"Hash not in {new_user}")
+        return new_user.copy()
 
     @classmethod
     def find_by_template(cls, template):
-        return [user for user in USERS.values() if all(user[key] == value\
+        return [user.copy() for user in USERS.values() if all(user[key] == value\
              for key, value in template.items() if value is not None)]
 
     @classmethod
@@ -46,7 +48,7 @@ class TestUserModel(BaseUserModel):
 
         user = USERS[_id]
         user.update(user_args)
-        return user
+        return user.copy()
 
     @classmethod
     def delete(cls, _id: str) -> None:

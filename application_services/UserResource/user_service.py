@@ -1,8 +1,9 @@
 
+from os import error
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
-from application_services.BaseResource import BaseResource, ResourceError, ResourceErrorCollection
+from application_services.BaseResource import BaseResource, InvalidArguement, ResourceError, ResourceErrorCollection
 from database_services.BaseUserModel import BaseUserModel, UserEmailExistsException
 from database_services.BaseAddressModel import BaseAddressModel
 
@@ -54,6 +55,18 @@ class IncorrectPassword(UserResourceError):
     def __init__(self):
         super().__init__()
 
+class NoAccountWithEmail(UserResourceError):
+    code = 2006
+    message = "Could not find account with email"
+    description = "Account with email {} is not registered"
+
+    def __init__(self, email = None):
+        super().__init__()
+        if email is None:
+            self.description = ""
+        else:
+            self.description = self.description.format(email)
+
 @dataclass
 class UserResource(BaseResource):
     user_model: BaseUserModel
@@ -84,8 +97,14 @@ class UserResource(BaseResource):
         return True, None
 
     def verify_password(self, _id, password):
-        user = self.user_model.find_by_template({"id": _id})
-        password_hash = user['pwHash']
+        suc, users, error = self._find({"id": _id})
+        if not suc:
+            return False, error
+
+        try:
+            password_hash = users[0]['pwHash']
+        except Exception:
+            raise Exception(f"Could not find pwHash in {users}")
         if not PasswordEncrytor.validate(password, password_hash):
             return False, ResourceErrorCollection(IncorrectPassword())
         return True, None
@@ -112,6 +131,42 @@ class UserResource(BaseResource):
         create_args['pwHash'] = password_hash
 
         return True, create_args, None
+    
+    def verify(self, user_args):
+        """Valids the users information"""
+        suc, errors = self.ensure_fields_in_args(user_args, ['email', 'password'])
+        if not suc:
+            return False, None, errors
+
+        suc, users, errors = self._find(user_args)
+        if not suc:
+            return False, None, errors
+        if len(users) != 1:
+            return False, None, ResourceErrorCollection(NoAccountWithEmail(user_args['email']))
+        user = users.pop()
+
+        suc, errors = self.verify_password(user['id'], user_args['password'])
+        if not suc:
+            return False, None, errors
+
+        suc, users, error = self._find(user_args)
+        if not suc:
+            return False, None, errors
+        return True, users[0], None
+
+    def _find(self, user_args = {}, address_args = {}):
+        if "password" in user_args and user_args["password"] is not None:
+            user_args = user_args.copy()
+            del user_args["password"]
+
+        user_args = {f:v for f, v in user_args.items() if v is not None}
+        address_args = {f:v for f, v in address_args.items() if v is not None}
+
+        if len(address_args) == 0:
+            users = self.user_model.find_by_template(user_args)
+        else:
+            users = self.user_model.find_by_address(user_args = user_args, address_args = address_args)
+        return True, users, None
 
     def create(self, user_args):
         suc, create_user_fields, errors = self.sign_up(user_args)
@@ -126,6 +181,7 @@ class UserResource(BaseResource):
 
     def find(self, user_args = {}, address_args = {}):
         if "password" in user_args and user_args["password"] is not None:
+            user_args = user_args.copy()
             del user_args["password"]
 
         user_args = {f:v for f, v in user_args.items() if v is not None}

@@ -1,6 +1,7 @@
 from flask import Flask, Response, request, url_for
 
 from application_services.UserResource.user_service import UserResource
+from application_services.Authentication.authentication_service import Authenticator
 
 import json
 import logging
@@ -11,10 +12,11 @@ logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
 
-from application_services.unit_tests.TestUserModel import TestUserModel
-from application_services.unit_tests.TestAddressModel import TestAddressModel
+from application_services.tests.TestUserModel import TestUserModel
+from application_services.tests.TestAddressModel import TestAddressModel
+from application_services.tests.TestTokenModel import TestTokenModel
 user_resource = UserResource(TestUserModel(), TestAddressModel())
-
+authenticator = Authenticator(TestTokenModel)
 @app.route('/')
 def hello_world():  # put application's code here
     return 'Hello World!'
@@ -116,11 +118,36 @@ def users_in_address_route(_id):
     # TO DO
     pass
 
-# Routes for sign_in and sign_out
-@app.route('/users/<string:_id>/session', methods=['GET', 'POST', 'DELETE'])
-def sign_in(_id):
-    # TO DO
-    pass
+# Routes for log-in procedure
+
+# log in
+@app.route('/users/auth')
+def generate_auth_token():
+    user_params = user_args_from_route()
+    res, status = authenticator.create_token(user_params, user_resource)
+    rsp = Response(json.dumps(res), status=status, content_type="application/json")
+    return rsp
+
+# verify session
+@app.route('/users/auth/<string:token>', methods = ['GET', 'DELETE'])
+def modify_token(token):
+    if request.method == 'GET':
+        return verify_auth_token(token)
+    if request.method == 'DELETE':
+        return clear_auth_token(token)
+
+def verify_auth_token(token):
+    user_params = user_args_from_route()
+    res, status = authenticator.validate_token(token, user_params, user_resource)
+    rsp = Response(json.dumps(res), status=status, content_type="application/json")
+    return rsp
+
+# log out
+def clear_auth_token(token):
+    user_params = user_args_from_route()
+    res, status = authenticator.delete_token(token, user_params, user_resource)
+    rsp = Response(json.dumps(res), status=status, content_type="application/json")
+    return rsp
 
 if __name__ == '__main__':
     app.run(debug=True)
