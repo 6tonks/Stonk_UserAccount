@@ -44,7 +44,8 @@ class RDSUserModel(BaseUserModel):
         return user_args
 
     def find_by_template(cls, user_args: Dict[str, str]) -> List[Dict[str, str]]:
-        pass
+        return d_service.get_by_template("Stonk", "User",user_args)
+
 
     def update(cls, _id: str, user_args: Dict[str, str]) -> Dict[str, str]:
         pass
