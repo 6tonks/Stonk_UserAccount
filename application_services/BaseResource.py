@@ -8,6 +8,7 @@ class ResourceError(ABC):
     message: str
     description: str
     suberrors: List
+    status: int = 404
 
     def __init__(self):
         self.suberrors = []
@@ -42,6 +43,7 @@ class ResourceErrorCollection(ResourceError):
     def response(self):
         if len(self) == 0:
             return {}
+        self.status = self.suberrors[-1].status
         return {"error": [error.response() for error in self.suberrors]}
 
     def __len__(self):
@@ -54,6 +56,7 @@ class MissingArguementError(ResourceError):
     code = 1001
     message = "Missing value for a required arguement"
     description =  "Value for {arg} is missing"
+    status = 400
 
     def __init__(self, arg):
         super().__init__()
@@ -63,6 +66,7 @@ class InvalidArguement(ResourceError):
     code = 1002
     message = "Invalid value for arguement"
     description = "{value} is not an appropriate value for {arg}"
+    status = 400
 
     def __init__(self, value = None, arg = None):
         super().__init__()
@@ -71,6 +75,29 @@ class InvalidArguement(ResourceError):
         else:
             self.description = self.description.format(value = value, arg = arg)
 
+def throws_resource_errors(func):
+    def wraper(*args, **kwargs):
+        last_output = None
+        for output in func(*args, **kwargs):
+            last_output = output
+            if isinstance(output, ResourceError):
+                if not isinstance(output, ResourceErrorCollection):
+                    output = ResourceErrorCollection(output)
+                return output
+        return last_output
+
+    return wraper 
+
+def sends_response(func):
+    func = throws_resource_errors(func)
+    def wraper(*args, **kwargs):
+        output = func(*args, **kwargs)
+        if isinstance(output, ResourceError):
+            return output.response(), output.status
+        return output
+
+    return wraper
+
 class BaseResource(ABC):
 
     @classmethod
@@ -78,13 +105,13 @@ class BaseResource(ABC):
         return {k: v for k, v in args.items() if v is not None}
 
     @classmethod
+    @throws_resource_errors
     def ensure_fields_in_args(cls, args, required_fields) -> Tuple[bool, ResourceErrorCollection]:
-        print(args)
         args = cls.preprocess_args(args)
         errors = ResourceErrorCollection()
 
         for field in required_fields:
-            if field not in args:
+            if field not in args or args[field] is None:
                 errors.add( MissingArguementError(field) )
         
-        return len(errors) == 0, errors
+        yield errors if len(errors) > 0 else None

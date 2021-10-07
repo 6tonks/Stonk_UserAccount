@@ -1,7 +1,9 @@
 from typing import Tuple
 from dataclasses import dataclass
 
-from application_services.BaseResource import BaseResource, ResourceError, ResourceErrorCollection
+from application_services.BaseResource import \
+    BaseResource, InvalidArguement, ResourceError, sends_response, throws_resource_errors
+
 from application_services.UserResource.Model.BaseUserModel import BaseUserModel, UserEmailExistsException
 from database_services.BaseAddressModel import BaseAddressModel
 
@@ -16,15 +18,17 @@ class UserResourceError(ResourceError):
     def __init__(self):
         super().__init__()
 
-class InvalidEmail(UserResourceError):
+class InvalidEmail(UserResourceError, InvalidArguement):
     code = 2001
     message = "The given email is invalid"
     description = ""
+    status = 400
 
-class InvalidPassword(UserResourceError):
+class InvalidPassword(UserResourceError, InvalidArguement):
     code = 2002
     message = "The given password is invalid"
     description = ""
+    status = 400
 
     def __init__(self):
         super().__init__()
@@ -33,6 +37,7 @@ class EmailAlreadyInUse(UserResourceError):
     code = 2003
     message = "The given email is already in use"
     description = ""
+    status = 400
 
     def __init__(self):
         super().__init__()
@@ -41,6 +46,7 @@ class UserNotFound(UserResourceError):
     code = 2004
     message = "User not found"
     description = ""
+    status = 404
 
     def __init__(self):
         super().__init__()
@@ -49,6 +55,7 @@ class IncorrectPassword(UserResourceError):
     code = 2005
     message = "Password is incorrect"
     description = ""
+    status = 400
 
     def __init__(self):
         super().__init__()
@@ -57,6 +64,7 @@ class NoAccountWithEmail(UserResourceError):
     code = 2006
     message = "Could not find account with email"
     description = "Account with email {} is not registered"
+    status = 400
 
     def __init__(self, email = None):
         super().__init__()
@@ -81,76 +89,59 @@ class UserResource(BaseResource):
             del user['pwHash']
         return user
 
+    @throws_resource_errors
     def validate_email(self, email):
         regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
         if not re.fullmatch(regex, email):
-            return False, ResourceErrorCollection(InvalidEmail())
-        return True, None
+            yield InvalidEmail()
 
-
+    @throws_resource_errors
     def validate_password(self, password):
         valid = PasswordValidator.is_valid(password)
         if not valid:
-            return False, ResourceErrorCollection(InvalidPassword())
-        return True, None
+            yield InvalidPassword()
 
+    @throws_resource_errors
     def verify_password(self, _id, password):
-        suc, users, error = self._find({"id": _id})
-        if not suc:
-            return False, error
+        users = self._find({"id": _id})
+        yield users
+        password_hash = users[0]['pwHash']
 
-        try:
-            password_hash = users[0]['pwHash']
-        except Exception:
-            raise Exception(f"Could not find pwHash in {users}")
         if not PasswordEncrytor.validate(password, password_hash):
-            return False, ResourceErrorCollection(IncorrectPassword())
-        return True, None
+            yield IncorrectPassword()
 
-    def sign_up(self, user_args):
-        # required fields check
-        suc, errors = self.ensure_fields_in_args(user_args, self.required_sign_up_fields)
-        if not suc:
-            return False, None, errors
-
-        # validate emails
-        suc, errors = self.validate_email(user_args['email'])
-        if not suc:
-            return False, None, errors
-
-        # validate password
-        suc, errors = self.validate_password(user_args['password'])
-        if not suc:
-            return False, None, errors
+    @throws_resource_errors
+    def generate_user_creation_fields(self, user_args):
+        yield self.ensure_fields_in_args(user_args, self.required_sign_up_fields)
+        yield self.validate_email(user_args['email'])
+        yield self.validate_password(user_args['password'])
 
         password_hash = PasswordEncrytor.encrypt(user_args['password'], user_args['email'])
         create_args = user_args.copy()
         del create_args['password']
         create_args['pwHash'] = password_hash
 
-        return True, create_args, None
-    
+        yield create_args
+
+    @throws_resource_errors
     def verify(self, user_args):
         """Valids the users information"""
-        suc, errors = self.ensure_fields_in_args(user_args, ['email', 'password'])
-        if not suc:
-            return False, None, errors
+        yield self.ensure_fields_in_args(user_args, ['email', 'password'])
+        users = self._find(user_args)
+        yield users
 
-        suc, users, errors = self._find(user_args)
-        if not suc:
-            return False, None, errors
         if len(users) != 1:
-            return False, None, ResourceErrorCollection(NoAccountWithEmail(user_args['email']))
+            yield NoAccountWithEmail(user_args['email'])
         user = users.pop()
 
         user_password = user_args['password']
         user_password_hash = user['pwHash']
-        print(user_password_hash)
         if not PasswordEncrytor.validate(user_password, user_password_hash):
-            return False, None, ResourceErrorCollection(IncorrectPassword())
+            yield IncorrectPassword()
 
-        return True, user, None
+        yield user
 
+    @throws_resource_errors
     def _find(self, user_args = {}, address_args = {}):
         if "password" in user_args and user_args["password"] is not None:
             user_args = user_args.copy()
@@ -163,19 +154,20 @@ class UserResource(BaseResource):
             users = self.user_model.find_by_template(user_args)
         else:
             users = self.user_model.find_by_address(user_args = user_args, address_args = address_args)
-        return True, users, None
+        yield users
 
+    @sends_response
     def create(self, user_args):
-        suc, create_user_fields, errors = self.sign_up(user_args)
-        if not suc:
-            return errors.response(), 400
+        create_user_fields = self.generate_user_creation_fields(user_args)
+        yield create_user_fields
 
         try:
             user = self.user_model.create(create_user_fields)
-            return self.clean_user(user), 201
+            yield self.clean_user(user), 201
         except UserEmailExistsException:
-            return ResourceErrorCollection(EmailAlreadyInUse()).response(), 404
+            yield EmailAlreadyInUse()
 
+    @sends_response
     def find(self, user_args = {}, address_args = {}):
         if "password" in user_args and user_args["password"] is not None:
             user_args = user_args.copy()
@@ -188,51 +180,42 @@ class UserResource(BaseResource):
             users = self.user_model.find_by_template(user_args)
         else:
             users = self.user_model.find_by_address(user_args = user_args, address_args = address_args)
-        return {"users": self.clean_users(users)}, 200
+        yield {"users": self.clean_users(users)}, 200
 
+    @sends_response
     def find_by_id(self, _id):
-        users, status = self.find(user_args = {'id': _id})
-        if status == 200 and len(users['users']) == 1:
-            return self.clean_user(users['users'][0]), 200
-        elif status == 200:
-            return ResourceErrorCollection(UserNotFound()).response(), 404
-        return users, status
+        users = self._find(user_args = {'id': _id})
+        yield users
+        if len(users['users']) != 1:
+            yield UserNotFound()
+        yield self.clean_user(users['users'][0]), 200
 
+    @sends_response
     def update(self, _id, user_args):
-        suc, errors = self.required_sign_up_fields(user_args, ["password"])
-        if not suc:
-            return errors.response(), 400
-        password = user_args['password']
-
-        suc, errors = self.verify_password(_id, password)
-        if not suc:
-            return errors.response(), 404
-
+        yield self.ensure_fields_in_args(user_args, ["password"])
+        yield self.verify_password(_id, user_args['password'])
         user = self.user_model.update(_id, user_args)
-        return self.clean_user(user), 200
+        yield self.clean_user(user), 200
     
+    @throws_resource_errors
     def delete(self, _id, user_args):
-        suc, errors = self.required_sign_up_fields(user_args, ["password"])
-        if not suc:
-            return errors.response(), 400
-        password = user_args['password']
-
-        suc, errors = self.verify_password(_id, password)
-        if not suc:
-            return errors.response(), 404
-
+        yield self.ensure_fields_in_args(user_args, ["password"])
+        yield self.verify_password(_id, user_args['password'])
         user = self.user_model.delete(_id)
-        return user, 200
+        yield user, 200
 
+    @sends_response
     def find_address(self, _id):
         address = self.user_model.find_address(_id)
-        return address, 200
+        yield address, 200
 
+    @sends_response
     def update_address(self, _id, address_args):
         address = self.user_model.find_address(_id)
         new_address = self.address_model.update(address['id'], address_args)
-        return new_address, 200
+        yield new_address, 200
     
+    @sends_response
     def delete_address(self, _id, password):
         user = self.user_model.delete_address(_id)
-        return self.clean_user(user), 200
+        yield self.clean_user(user), 200
