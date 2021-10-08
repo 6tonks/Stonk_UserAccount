@@ -110,15 +110,11 @@ def update_record_with_keys(db_schema, table_name, keys, record):
     conn.close()
     logger.debug("Update Success")
 
-def get_by_template(db_schema, table_name, keys, fields = None):
+def get_by_template(db_schema, table_name, keys = None, fields = None):
     conn = _get_db_connection()
     cur = conn.cursor()
 
-    condition_str = "";
-    for p in keys:
-        condition_str += (p + " = '" + keys[p] + "' AND ")
-    condition_str = condition_str[:-5]
-    #print(condition_str)
+
 
     fields_str = ""
     if fields != None:
@@ -129,10 +125,21 @@ def get_by_template(db_schema, table_name, keys, fields = None):
     else:
         fields_str = "*"
 
-    sql = "SELECT " + fields_str + " FROM " + db_schema + "." + table_name + " WHERE " + condition_str + ";"
+    sql = "SELECT " + fields_str + " FROM " + db_schema + "." + table_name
+
+    if bool(keys):
+        condition_str = "";
+        for p in keys:
+            condition_str += (p + " = '" + keys[p] + "' AND ")
+        condition_str = condition_str[:-5]
+        sql = sql + " WHERE " + condition_str
+
+    sql = sql + ";"
+    # print(condition_str)
+
     #print(sql)
-    logger.debug("SQL Statement = " + cur.mogrify(sql))
-    res = cur.execute(sql) # safe way to avoid SQL Inject
+    print("get_by_template(), SQL Statement = " + cur.mogrify(sql))
+    res = cur.execute(sql)
     res = cur.fetchall()
 
     conn.close()

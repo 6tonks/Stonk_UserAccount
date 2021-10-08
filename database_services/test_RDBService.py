@@ -21,21 +21,33 @@ def test_update_record_with_keys():
                                               {"nameFirst": "mrUpdated", "nameLast": "updatedlastName"}
     )
 
-def test_get_by_key():
+def test_get_by_template():
+    r = db_service.get_by_template("Stonk", "User")
+    print(r)
+
+    print("________________________")
+
+    r = db_service.get_by_template("Stonk", "User",{"userID": "3"})
+    print(r)
+
+    print("________________________")
+
     r = db_service.get_by_template("Stonk", "User",
-                                   {"userID": "4"},
+                                   None,
                                    ["nameFirst", "nameLast"]
                                    )
     print(r)
 
+    print("________________________")
+
     r = db_service.get_by_template("Stonk", "User",
-                                   {"userID": "4"},
-                                   None
+                                   {"userID": "11"},
+                                   ["nameFirst", "nameLast"]
                                    )
     print(r)
 
 #test_insert();
 #test_update_record_with_keys()
-#test_get_by_key()
+test_get_by_template()
 
 
