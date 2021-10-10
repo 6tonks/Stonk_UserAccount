@@ -10,6 +10,7 @@ import database_services.RDBService as d_service
 class RDSUserModel(BaseUserModel):
     Duplicate_Entry_ErrorCode = 1062
 
+    @classmethod
     def create(cls, user_args: Dict[str, str]) -> Dict[str, str]:
         """Add the user to the DB
                   :param dict reg_info: dictionary contained all info need to reg, which are:
@@ -43,15 +44,20 @@ class RDSUserModel(BaseUserModel):
         print("RDSUserModel", "New User Added Success, UserPK: ", user_PK)
         return user_args
 
+    @classmethod
     def find_by_template(cls, user_args: Dict[str, str]) -> List[Dict[str, str]]:
-        return d_service.get_by_template("Stonk", "User",user_args)
+        return d_service.get_by_template("Stonk", "User", user_args)
 
-
+    @classmethod
     def update(cls, _id: str, user_args: Dict[str, str]) -> Dict[str, str]:
-        pass
+        d_service.update_record_with_keys("Stonk", "User", {"userID": _id}, user_args)
+        return d_service.get_by_template("Stonk", "User", {"userID": _id})
 
+    @classmethod
     def delete(cls, _id: str) -> None:
-        pass
+        d_service.remove_old_record("Stonk", "User", "userID", _id)
+        return d_service.get_by_template("Stonk", "User", {"userID": _id})
 
+    @classmethod
     def find_by_address(cls, user_args: Dict[str, str], address_args: Dict[str, str]) -> List[Dict[str, str]]:
         pass

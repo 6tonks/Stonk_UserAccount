@@ -12,8 +12,6 @@ class RDSTokenModel(BaseTokenModel):
     def create(cls, id):
         return cls.refresh_token(cls, str(id))
 
-        raise Exception("Couldn't generate token. Very rare failure?")
-
     def generate_new_token(self):
         return secrets.token_urlsafe(64)
 
@@ -47,9 +45,16 @@ class RDSTokenModel(BaseTokenModel):
         return new_token
 
     @classmethod
-    def validate(cls, token, id):
-        pass
+    def validate(cls, token, user_id):
+        rec = d_service.get_by_template("Stonk", "Token", 
+        {
+            "userID": user_id, 
+            'token': token
+        })
+        print(rec)
+        return rec is not None
 
     @classmethod
     def delete(cls, token):
-        pass
+        d_service.remove_old_record("Stonk", "Token", "token", token)
+        return d_service.get_by_template("Stonk", "Token", {"token": token})

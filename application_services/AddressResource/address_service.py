@@ -1,33 +1,34 @@
-from os import error
+from enum import Enum
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
-from application_services.BaseResource import BaseResource, ResourceError, sends_response, throws_resource_errors
+from application_services.BaseResource import BaseResource, sends_response, throws_resource_errors
 from database_services.BaseAddressModel import BaseAddressModel
 
+from application_services.AddressResource.AddressError import *
 
-class AddressResourceError(ResourceError):
-    code = 4000
-    
-    def __init__(self):
-        super().__init__()
+class ADDRESS_ARGS(Enum):
+    ID = 'addressID'
+    FIRST_LINE = 'address_first_line'
+    SECOND_LINE = 'address_second_line'
+    CITY = 'address_city'
+    STATE = 'address_state'
+    ZIP_CODE = 'address_zip_code'
+    COUNTRY_CODE = 'address_country_code'
 
-class AddressNotFound(AddressResourceError):
-    code = 4001
-    message = "Address not found"
-    description = ""
-    status = 404
+    @property
+    def str(self):
+        return self.value
 
 @dataclass
 class AddressResource(BaseResource):
     address_model: BaseAddressModel
     required_address_fields: Tuple[str] = (
-        'address_first_line', 
-        'address_second_line', 
-        'address_city', 
-        'address_state',
-        'address_zip_code',
-        'address_country_code'
+        ADDRESS_ARGS.FIRST_LINE.str,
+        ADDRESS_ARGS.SECOND_LINE.str, 
+        ADDRESS_ARGS.CITY.str,
+        ADDRESS_ARGS.ZIP_CODE.str,
+        ADDRESS_ARGS.COUNTRY_CODE.str
     )
 
     @sends_response
@@ -49,25 +50,25 @@ class AddressResource(BaseResource):
 
     @sends_response
     def find_by_id(self, _id):
-        addresses = self._find({'id': _id})
+        addresses = self._find({ADDRESS_ARGS.ID.str: _id})
         yield addresses
         if len(addresses) == 0:
             yield AddressNotFound()
         yield addresses[0], 200
 
     @sends_response
-    def update(self, _id, user_args):
-        addresses = self._find({'id': _id})
+    def update(self, _id, address_args):
+        addresses = self._find({ADDRESS_ARGS.ID.str: _id})
         yield addresses
         if len(addresses) == 0:
             yield AddressNotFound()
         
-        address = self.address_model.update(_id, user_args)
+        address = self.address_model.update(_id, address_args)
         yield address, 200
     
     @sends_response
-    def delete(self, _id, user_args):
-        addresses = self._find({'id': _id})
+    def delete(self, _id):
+        addresses = self._find({ADDRESS_ARGS.ID.str: _id})
         yield addresses
 
         if len(addresses) == 0:

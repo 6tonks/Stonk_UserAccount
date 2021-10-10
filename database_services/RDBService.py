@@ -9,10 +9,20 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 # endregion
 
+from pypika import Query, Table, Parameter
+
 # region DB name
 DB_SCHEMA = "Stonk"
 DB_USER_TABLE = "User"
 # region
+
+def debug(func):
+    def wrapper(*args, **kwargs):
+        print(f"Args: {args} {kwargs}" )
+        out = func(*args, **kwargs)
+        print(f"Output: {out}")
+        return out
+    return wrapper
 
 def _get_db_connection():
     db_connect_info = context.get_db_info()
@@ -75,6 +85,30 @@ def insert_new_record(db_schema, table_name, record, return_primary_key = False)
     if return_primary_key:
         return primary_key[0]['LAST_INSERT_ID()']
 
+def run_sql(func):
+    def wrapper(*args, **kwargs):
+        sql, values = func(*args, **kwargs)
+
+        conn = _get_db_connection()
+        cur = conn.cursor()
+
+        logger.debug("SQL Statement = " + cur.mogrify(sql, values))
+        cur.execute(sql, values)  # safe way to avoid SQL Injection
+        res = cur.fetchall()
+        conn.commit()
+        conn.close()
+        logger.debug("SQL Success")
+        return res
+    wrapper.__name__ = func.__name__
+    return wrapper
+
+
+@run_sql
+def remove_old_record(db_schema, table_name, primary_key, key_value):
+    return f"DELETE FROM {db_schema}.{table_name} WHERE {primary_key}=%s;", key_value
+
+@run_sql
+@debug
 def update_record_with_keys(db_schema, table_name, keys, record):
     """
 
@@ -84,6 +118,20 @@ def update_record_with_keys(db_schema, table_name, keys, record):
     :param record: records for update
     :return:
     """
+
+    tbl = Table(f'{db_schema}.{table_name}')
+    query, values = Query.update(tbl), []
+
+    for k in record.keys():
+        query = query.set(tbl[k], Parameter('%s'))
+    values.extend(record.values())
+
+    for k in keys.keys():
+        query = query.where(tbl[k] == Parameter('%s'))
+    values.extend(keys.values())
+
+    return str(query).replace("\"", ''), values
+
     conn = _get_db_connection()
     cur = conn.cursor()
 
@@ -110,36 +158,33 @@ def update_record_with_keys(db_schema, table_name, keys, record):
     conn.close()
     logger.debug("Update Success")
 
+@run_sql
+@debug
 def get_by_template(db_schema, table_name, keys = None, fields = None):
+    tbl = Table(f'{db_schema}.{table_name}')
+    query = Query.from_(tbl)
+    values = []
+
+    if fields is None or len(fields) == 0:
+        query = query.select('*')
+    else:
+        values.extend(fields)
+        query = query.select( *[Parameter('%s') * len(fields)] )
+
+    for k, v in keys.items():
+        values.append(v)
+        query = query.where(tbl[k] == Parameter('%s'))
+
+    return str(query).replace("\"", ""), values
+
+
+
     conn = _get_db_connection()
     cur = conn.cursor()
 
-
-
-    fields_str = ""
-    if fields != None:
-        for f in fields:
-            fields_str += (f + ", ")
-
-        fields_str = fields_str[:-2]
-    else:
-        fields_str = "*"
-
-    sql = "SELECT " + fields_str + " FROM " + db_schema + "." + table_name
-
-    if bool(keys):
-        condition_str = "";
-        for p in keys:
-            condition_str += (p + " = '" + keys[p] + "' AND ")
-        condition_str = condition_str[:-5]
-        sql = sql + " WHERE " + condition_str
-
-    sql = sql + ";"
-    # print(condition_str)
-
-    #print(sql)
-    print("get_by_template(), SQL Statement = " + cur.mogrify(sql))
-    res = cur.execute(sql)
+    stmt = cur.mogrify(str(query).replace("\"", ''))
+    print(f"get_by_template(), SQL Statement = {stmt}")
+    cur.execute(stmt)
     res = cur.fetchall()
 
     conn.close()
