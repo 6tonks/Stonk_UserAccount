@@ -14,11 +14,11 @@ logger.setLevel(logging.INFO)
 app = Flask(__name__)
 
 from application_services.UserResource.Model.RDSUserModel import RDSUserModel
-from application_services.tests.TestAddressModel import TestAddressModel
+from application_services.AddressResource.Model.RDSAddressModel import RDSAddressModel
 from application_services.Authentication.Model.RDSTokenModel import RDSTokenModel
 
-user_resource = UserResource(RDSUserModel, TestAddressModel)
-address_resource = AddressResource(TestAddressModel)
+user_resource = UserResource(RDSUserModel, RDSAddressModel)
+address_resource = AddressResource(RDSAddressModel)
 authenticator = Authenticator(RDSTokenModel, user_resource)
 
 @app.route('/')
@@ -40,14 +40,15 @@ def user_args():
         "password": ("password",)
     })
 
+from application_services.AddressResource.address_service import ADDRESS_ARGS
 def address_args():
     return args_from_route({
-        "address_first_line": ("address_first_line", "first_line", "addressFirstLine", "firstLine"),
-        "address_second_line": ("address_second_line", "second_line", "addressSecondLine", "secondLine"),
-        "address_city": ("address_city", "city", "addressCity"),
-        "address_state": ("address_state", "state", "addressState"),
-        "address_zip_code": ("address_zip_code", "zip_code", "addressZipCode", "zipCode"),
-        "address_country_code": ("address_country_code", "country_code", "addressCountryCode", "countryCode")
+        ADDRESS_ARGS.FIRST_LINE.str: ("address_first_line", "first_line", "addressFirstLine", "firstLine"),
+        ADDRESS_ARGS.SECOND_LINE.str: ("address_second_line", "second_line", "addressSecondLine", "secondLine"),
+        ADDRESS_ARGS.CITY.str: ("address_city", "city", "addressCity"),
+        ADDRESS_ARGS.STATE.str: ("address_state", "state", "addressState"),
+        ADDRESS_ARGS.ZIP_CODE.str: ("address_zip_code", "zip_code", "addressZipCode", "zipCode"),
+        ADDRESS_ARGS.COUNTRY_CODE.str: ("address_country_code", "country_code", "addressCountryCode", "countryCode")
     })
 
 def token_args():
