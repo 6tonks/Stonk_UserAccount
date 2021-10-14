@@ -194,7 +194,7 @@ def addresses_route():
 @returns_json_response
 def address_by_id_route(_id):
     if request.method == 'GET':
-        resp, status = address_resource.find_address(_id)
+        resp, status = address_resource.find_by_id(_id)
         if status == 200:
             resp['links'] = [
                 {
