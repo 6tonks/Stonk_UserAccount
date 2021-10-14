@@ -1,0 +1,77 @@
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Dict
+
+from application_services.BaseResource import BaseResource, ResourceError, sends_response, throws_resource_errors
+from application_services.ClientResource.Model.RDSClientModel import RDSClientModel, ClientCreationFailed
+
+import requests
+
+class CLIENT_ARGS(Enum):
+    ID = "clientID"
+    LISTEN_URL = "listenURL"
+
+    @property
+    def str(self):
+        return self.value
+
+class NOTIFICATION(Enum):
+    USER_CREATED = 0
+    USER_DELETION = 1
+
+
+class ClientError(ResourceError):
+    code = 6000
+
+class ClientCreateFailed(ClientError):
+    message = "Failed to create client"
+    description = ""
+    status = 500
+    code = 6001
+
+class ClientThrewError(ClientError):
+    message = "Downstream error"
+    description = ""
+    status = 500
+    code = 6002
+
+@dataclass
+class ClientResource(BaseResource):
+    client_model = RDSClientModel
+
+    @sends_response
+    def subscribe(self, client_args):
+        yield self.ensure_fields_in_args(client_args, CLIENT_ARGS.LISTEN_URL.str)
+        
+        try:
+            client = self.client_model.create(client_args)
+        except ClientCreationFailed:
+            yield ClientCreateFailed()
+
+        yield client, 201
+
+    @sends_response
+    def find(self):
+        clients = self.client_model.find_by_template()
+        yield {"clients": clients}, 200
+
+
+    @sends_response
+    def unsubscribe(self, client_id):
+        client = self.client_model.delete(client_id)
+        yield client
+
+    @throws_resource_errors
+    def notify_clients(self, of: NOTIFICATION, content: Dict[str, Any]):
+        notification = {
+            'event': of.name,
+        }
+        for k, v in content.items():
+            notification[k] = v
+
+        clients = self.client_model.find_by_template()
+        for client in clients:
+            listen_url = client['url']
+            res = requests.post(url=listen_url, json=notification)
+            if not res.ok:
+                yield ClientThrewError()

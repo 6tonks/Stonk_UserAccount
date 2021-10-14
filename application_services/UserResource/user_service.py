@@ -132,8 +132,8 @@ class UserResource(BaseResource):
             yield EmailAlreadyInUse()
         
         user = self.clean_user(user)
-        client_response = self.notify_clients(of = USER_CREATION, content = user)
-        yield client_response
+        #client_response = self.notify_clients(of = USER_CREATION, content = user)
+        #yield client_response
 
         yield user, 201
 
