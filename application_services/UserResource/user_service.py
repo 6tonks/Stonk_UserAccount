@@ -40,7 +40,8 @@ class UserResource(BaseResource):
         USER_ARGS.ID.str,
         USER_ARGS.FIRST_NAME.str, 
         USER_ARGS.LAST_NAME.str,
-        USER_ARGS.EMAIL.str
+        USER_ARGS.EMAIL.str,
+        "addressID"
     )
 
 
