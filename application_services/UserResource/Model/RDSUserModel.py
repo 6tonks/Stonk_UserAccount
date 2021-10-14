@@ -4,7 +4,8 @@ import pymysql
 
 from application_services.UserResource.Model.BaseUserModel import BaseUserModel, UserEmailExistsException
 import database_services.RDBService as d_service
-from  application_services.UserResource.user_service import USER_ARGS
+from application_services.UserResource.user_service import USER_ARGS
+
 
 # or maybe should just name it UserModel?
 class RDSUserModel(BaseUserModel):

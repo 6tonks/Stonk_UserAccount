@@ -128,9 +128,14 @@ class UserResource(BaseResource):
 
         try:
             user = self.user_model.create(create_user_fields)
-            yield self.clean_user(user), 201
         except UserEmailExistsException:
             yield EmailAlreadyInUse()
+        
+        user = self.clean_user(user)
+        client_response = self.notify_clients(of = USER_CREATION, content = user)
+        yield client_response
+
+        yield user, 201
 
     @sends_response
     def find(self, user_args = {}, address_args = {}):

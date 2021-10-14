@@ -51,7 +51,6 @@ class RDSTokenModel(BaseTokenModel):
             "userID": user_id, 
             'token': token
         })
-        print(rec)
         return rec is not None
 
     @classmethod
