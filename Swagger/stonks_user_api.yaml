@@ -1,0 +1,155 @@
+swagger: "2.0"
+info:
+  title: Stonk User service API
+  description: API document for Stonk User service
+  version: 1.0.0
+servers:
+  - url: http://api.example.com/v1
+    description: Optional server description, e.g. Main (production) server
+  - url: http://staging-api.example.com
+    description: Optional server description, e.g. Internal staging server for testing
+tags:
+  - name: "users"
+    description: 'Everything about "users"'
+  - name: "address"
+    description: 'Everything about "address"'
+host: 
+  localhost:5000 # replace with you target host when testing
+schemes:
+  - http
+  - https
+paths:
+  /users:
+    get:
+      tags:
+        - "users"
+      summary: "Returns all user"
+      description: "Returns all user"
+      responses:
+        "200":
+          description: "OK"
+          # to do
+        "400":
+          description: "Invalid status value"
+    post:
+      tags:
+        - "users"
+      summary: "User Sign-up"
+      description: "User Sign-up"
+      produces:
+      - application/json
+      parameters:
+      - name: email
+        in: query
+        description: Email for sign-up, must be uniqe
+        required: true
+        type: string
+      - name: password
+        in: query
+        description: password for sign-up, I think there's some limitation but I'm not sure what it is
+        required: true
+        type: string
+      - name: firstName
+        in: query
+        description: firstName for sign-up
+        required: true
+        type: string
+      - name: lastName
+        in: query
+        description: lastName for sign-up
+        required: true
+        type: string
+      responses:
+        "201":
+          description: "OK"
+          # to do
+        "400":
+          description: "Invalid status value"
+  /users/{userId}:
+    get:
+      tags:
+        - "users"
+      summary: "Get specific user details with its id"
+      description: "Get id for specific user"
+      parameters:
+      - name: userId
+        in: path
+        description: user id to lookup
+        required: true
+        type: string
+      responses:
+        "200":
+          description: "OK"
+          # to do
+        "400":
+          description: "Invalid status value"
+  /users/{userId}/addresses:
+    put:
+      tags:
+        - "users"
+      summary: "Set address for specific user; if the user don't have address yet, it will create one; else, update the record"
+      description: "Get id for specific user"
+      parameters:
+      - name: userId
+        in: path
+        description: user id to lookup
+        required: true
+        type: string
+      - name: countryCode
+        in: query        
+        required: false
+        type: string
+      - name: zipCode
+        in: query
+        required: false
+        type: string
+      - name: state
+        in: query
+        required: false
+        type: string
+      - name: city
+        in: query
+        required: false
+        type: string
+      - name: firstLine
+        in: query
+        required: false
+        type: string
+      - name: secondLine
+        in: query
+        required: false
+        type: string
+      responses:
+        "200":
+          description: "OK"
+          # to do
+        "400":
+          description: "Invalid status value"
+  /addresses:
+    get:
+      tags:
+        - "addresses"
+      summary: "Returns all addresses"
+      responses:
+        "200":
+          description: "OK"
+          # to do
+        "400":
+          description: "Invalid status value"
+  /addresses/{addressesId}:
+    get:
+      tags:
+        - "addresses"
+      summary: "Get address by address id"
+      parameters:
+      - name: addressesId
+        in: path
+        description: addressesId to lookup
+        required: true
+        type: string      
+      responses:
+        "200":
+          description: "OK"
+          # to do
+        "400":
+          description: "Invalid status value"
