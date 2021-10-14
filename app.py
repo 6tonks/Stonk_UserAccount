@@ -70,6 +70,29 @@ def returns_json_response(func):
     wrapper.__name__ = func.__name__
     return wrapper
 
+
+@app.route('/')
+@returns_json_response
+def index():
+    return {
+        'message': "Wellcome to the Stonks! user service",
+        'links': [
+            {
+                'rel': 'self',
+                'href': '/'
+            },
+            {
+                'rel': 'users',
+                'href': '/users'
+            },
+            {
+                'rel': 'addresses',
+                'href': '/addresses'
+            }
+        ]
+    
+    }, 200
+
 @app.route('/users', methods=['POST', 'GET'])
 @returns_json_response
 def users_route():
@@ -80,8 +103,8 @@ def users_route():
     Currently also handles signup through POST
     """
     user_params = user_args()
-    if request.method == 'POST':
-        resp, status = user_resource.create(user_args = user_params)
+    if request.method == 'GET':
+        resp, status = user_resource.find(user_args = user_params)
         if status == 200:
             resp['links'] = [
                 {
@@ -90,8 +113,8 @@ def users_route():
                 }               
             ]
         return resp, status
-    if request.method == 'GET':
-        return user_resource.find(user_args = user_params)
+    if request.method == 'POST':
+        return user_resource.create(user_args = user_params)
 
 @app.route('/users/<string:_id>', methods=['GET', 'PUT', 'DELETE'])
 @returns_json_response
@@ -200,7 +223,7 @@ def users_in_address_route(_id):
         return resp, status
     
     if request.method == 'POST':
-        user_resource.get_id_before_execute(
+        return user_resource.get_id_before_execute(
             user_args = user_args(),
             func = lambda user_id: authenticator.verify_before_execute(
                 user_id = user_id, token_args=token_args(),
