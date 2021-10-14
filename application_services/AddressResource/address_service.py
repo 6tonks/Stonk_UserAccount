@@ -3,18 +3,18 @@ from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
 from application_services.BaseResource import BaseResource, sends_response, throws_resource_errors
-from database_services.BaseAddressModel import BaseAddressModel
+from application_services.AddressResource.Model.BaseAddressModel import BaseAddressModel
 
 from application_services.AddressResource.AddressError import *
 
 class ADDRESS_ARGS(Enum):
     ID = 'addressID'
-    FIRST_LINE = 'address_first_line'
-    SECOND_LINE = 'address_second_line'
-    CITY = 'address_city'
-    STATE = 'address_state'
-    ZIP_CODE = 'address_zip_code'
-    COUNTRY_CODE = 'address_country_code'
+    FIRST_LINE = 'firstLine'
+    SECOND_LINE = 'secondLine'
+    CITY = 'city'
+    STATE = 'state'
+    ZIP_CODE = 'zipCode'
+    COUNTRY_CODE = 'countryCode'
 
     @property
     def str(self):

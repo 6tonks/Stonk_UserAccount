@@ -4,11 +4,11 @@ from abc import ABC, abstractclassmethod
 class BaseAddressModel(ABC):
 
     @abstractclassmethod
-    def create(cls, address_args: Dict[str, str]) -> Dict[str, str]:
+    def create(cls, address_args: Dict[str, str]) -> int:
         """
             Creates a user
             @param address_args 
-            @return created object
+            @return addressID (Primary key)
         """
         raise NotImplementedError()
 

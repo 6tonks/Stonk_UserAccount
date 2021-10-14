@@ -7,7 +7,7 @@ from application_services.BaseResource import \
 from application_services.UserResource.UserError import *
 
 from application_services.UserResource.Model.BaseUserModel import BaseUserModel, UserEmailExistsException
-from database_services.BaseAddressModel import BaseAddressModel
+from application_services.AddressResource.Model.BaseAddressModel import BaseAddressModel
 
 from application_services.UserResource.password_encryption import PasswordEncrytor
 from application_services.UserResource.password_validation import PasswordValidator
@@ -21,7 +21,7 @@ class USER_ARGS(Enum):
     EMAIL = 'email'
     PASSWORD = "password"
     PASSWORD_HASH = "pwHash"
-
+    ADDRESS_ID = "addressID"
     @property
     def str(self):
         return self.value
@@ -41,7 +41,7 @@ class UserResource(BaseResource):
         USER_ARGS.FIRST_NAME.str, 
         USER_ARGS.LAST_NAME.str,
         USER_ARGS.EMAIL.str,
-        "addressID"
+        USER_ARGS.ADDRESS_ID.str
     )
 
 
@@ -184,9 +184,27 @@ class UserResource(BaseResource):
         yield address, 200
 
     @sends_response
-    def update_address(self, _id, address_args):
-        address = self.user_model.find_address(_id)
-        new_address = self.address_model.update(address['id'], address_args)
+    def update_address(self, _userId, address_args):
+        print("update_address", _userId)
+        print("update_address", address_args)
+        #check if user have addressid, if yes, update address, else insert a new one
+        userRecord = self.user_model.find_by_template({"userID":_userId})
+        print(userRecord)
+
+        addressID = userRecord[0]['addressID']
+        new_address = None
+        # no address, insert new record
+        if addressID == 0:
+            print("creating new address record for user, userID: " + _userId)
+            addressID = self.address_model.create(address_args)
+            print("new address record created, addressID: " + addressID)
+            #also update user table
+            self.user_model.update(_userId, {"addressID" : addressID})
+        else: # update
+            print("updating existing record")
+            self.address_model.update(addressID, address_args)
+
+        new_address = self.address_model.find_by_template({'addressID': addressID})
         yield new_address, 200
     
     @sends_response

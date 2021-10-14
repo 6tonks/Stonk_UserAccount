@@ -54,7 +54,7 @@ def address_args(_id = None):
     })
     if _id is not None:
         args['addressId'] = _id
-    return
+    return args
 
 def token_args():
     return args_from_route({

@@ -1,6 +1,6 @@
 # Test for CREATE, READ, UPDATE, DESTROY user for user service
 from application_services.UserResource.user_service import UserResource
-from application_services.tests import TestAddressModel
+from application_services.AddressResource.Model import TestAddressModel
 from application_services.UserResource.Model import TestUserModel
 
 user_resource = UserResource(TestUserModel, TestAddressModel)

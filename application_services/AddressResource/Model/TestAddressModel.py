@@ -1,5 +1,5 @@
 from typing import Dict, List
-from database_services.BaseAddressModel import BaseAddressModel
+from application_services.AddressResource.Model.BaseAddressModel import BaseAddressModel
 
 ADDRESSES = {}
 
