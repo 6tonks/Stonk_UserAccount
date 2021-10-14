@@ -162,6 +162,11 @@ def auth_token_from_user_id(_id):
 def verify_auth_token_from_id(_id):
     return authenticator.validate_token(_id, token_args = token_args())
 
+@app.errorhandler(404)
+@returns_json_response
+def page_not_found(e):
+    return {'message': "Page not found", 'description': str(e)}, 404
+
 # subscribtion to changes
 # send on creation/delete
 # user_id_list
