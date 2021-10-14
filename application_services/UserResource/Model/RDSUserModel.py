@@ -4,7 +4,7 @@ import pymysql
 
 from application_services.UserResource.Model.BaseUserModel import BaseUserModel, UserEmailExistsException
 import database_services.RDBService as d_service
-
+from  application_services.UserResource.user_service import USER_ARGS
 
 # or maybe should just name it UserModel?
 class RDSUserModel(BaseUserModel):
@@ -26,10 +26,10 @@ class RDSUserModel(BaseUserModel):
             user_PK = d_service.insert_new_record("Stonk", "User",
                                                   {
                                                       "userID": 'DEFAULT',
-                                                      "email": user_args['email'],
-                                                      "pwHash": user_args['pwHash'],
-                                                      "nameLast": user_args['lastName'],
-                                                      "nameFirst": user_args['firstName'],
+                                                      "email": user_args[USER_ARGS.EMAIL.str],
+                                                      "pwHash": user_args[USER_ARGS.PASSWORD_HASH.str],
+                                                      "nameLast": user_args[USER_ARGS.LAST_NAME.str],
+                                                      "nameFirst": user_args[USER_ARGS.FIRST_NAME.str],
                                                       "addressID": "NULL"
                                                   },
                                                   True
