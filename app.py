@@ -1,6 +1,8 @@
+from os import stat
+from re import S
 from flask import Flask, Response, request
 
-from application_services.UserResource.user_service import UserResource
+from application_services.UserResource.user_service import USER_ARGS, UserResource
 from application_services.AddressResource.address_service import AddressResource
 from application_services.Authentication.authentication_service import Authenticator
 
@@ -40,8 +42,8 @@ def user_args():
         "password": ("password",)
     })
 
-def address_args():
-    return args_from_route({
+def address_args(_id = None):
+    args = args_from_route({
         "address_first_line": ("address_first_line", "first_line", "addressFirstLine", "firstLine"),
         "address_second_line": ("address_second_line", "second_line", "addressSecondLine", "secondLine"),
         "address_city": ("address_city", "city", "addressCity"),
@@ -49,6 +51,9 @@ def address_args():
         "address_zip_code": ("address_zip_code", "zip_code", "addressZipCode", "zipCode"),
         "address_country_code": ("address_country_code", "country_code", "addressCountryCode", "countryCode")
     })
+    if _id is not None:
+        args['addressId'] = _id
+    return
 
 def token_args():
     return args_from_route({
@@ -75,7 +80,15 @@ def users_route():
     """
     user_params = user_args()
     if request.method == 'POST':
-        return user_resource.create(user_args = user_params)
+        resp, status = user_resource.create(user_args = user_params)
+        if status == 200:
+            resp['links'] = [
+                {
+                    'rel': 'self',
+                    'href': f'/users'
+                }               
+            ]
+        return resp, status
     if request.method == 'GET':
         return user_resource.find(user_args = user_params)
 
@@ -89,7 +102,19 @@ def user_by_id_route(_id: str):
     """
     user_params = user_args()
     if request.method == 'GET':
-        return user_resource.find_by_id(_id)
+        resp, status = user_resource.find_by_id(_id)
+        if status == 200:
+            resp['links'] = [
+                {
+                    'rel': 'self',
+                    'href': f'/users/{_id}'
+                },
+                {
+                    "rel": "address",
+                    'href': f'/address/{resp[USER_ARGS.ADDRESS_ID.str]}'
+                }                
+            ]
+        return resp, status
     if request.method == 'PUT':
         return authenticator.verify_before_execute(
             _id, token_args(), 
@@ -105,7 +130,19 @@ def user_by_id_route(_id: str):
 @returns_json_response
 def user_address_route(_id):
     if request.method == 'GET':
-        return user_resource.find_address(_id)
+        resp, status = user_resource.find_address(_id)
+        if status == 200:
+            resp['links'] = [
+                {
+                    'rel': 'self',
+                    'href': f'/users/{_id}/addresses'
+                },
+                {
+                    'rel': 'address',
+                    'href': f'addresses/{resp[USER_ARGS.ADDRESS_ID.str]}'
+                }
+            ]
+        return resp, status
     if request.method == 'PUT':
         address_params = address_args()
         return user_resource.update_address(_id, address_params)
@@ -116,26 +153,59 @@ def user_address_route(_id):
 @app.route('/addresses', methods=['GET', 'PUT', 'DELETE'])
 @returns_json_response
 def addresses_route():
+    if request.method == 'GET':
+        resp, status = address_resource.find(address_args = address_args())
+        if status == 200:
+            resp['links'] = [
+                {
+                    'rel': 'self',
+                    'href': f'/addresses'
+                }
+            ]
+        return resp, status
     if request.method == 'POST':
         return address_resource.create(address_args = address_args())
-    if request.method == 'GET':
-        return address_resource.find(address_args = address_args())
 
 @app.route('/addresses/<string:_id>', methods=['GET', 'PUT', 'DELETE'])
 @returns_json_response
 def address_by_id_route(_id):
     if request.method == 'GET':
-        return address_resource.find_address(_id)
+        resp, status = address_resource.find_address(_id)
+        if status == 200:
+            resp['links'] = [
+                {
+                    'rel': 'self',
+                    'href': f'/addresses/{_id}'
+                }
+            ]
+        return resp, status
     if request.method == 'PUT':
         return address_resource.update_address(_id, address_args())
     if request.method == 'DELETE':
         user_params = user_args()
         return address_resource.delete_address(_id, user_params["password"])
 
-@app.route('/addresses/<string:_id>/users', methods=['GET'])
+@app.route('/addresses/<string:_id>/users', methods=['GET', 'POST'])
 def users_in_address_route(_id):
-    # TO DO
-    pass
+    if request.method == 'GET':
+        resp, status = user_resource.find(user_args = user_args(), address_args = address_args(_id = _id))
+        if status == 200:
+            resp['links'] = [
+                {
+                    'rel': 'self',
+                    'href': f'/addresses/{_id}/users'
+                }
+            ]
+        return resp, status
+    
+    if request.method == 'POST':
+        user_resource.get_id_before_execute(
+            user_args = user_args(),
+            func = lambda user_id: authenticator.verify_before_execute(
+                user_id = user_id, token_args=token_args(),
+                func = lambda : user_resource.update_address(user_id, address_args(_id = _id))
+            )
+        )
 
 # Routes for log-in procedure
 
