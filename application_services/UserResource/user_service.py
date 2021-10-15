@@ -1,6 +1,7 @@
 from typing import Tuple
 from dataclasses import dataclass
 from enum import Enum
+from application_services.AddressResource.address_service import ADDRESS_ARGS
 
 from application_services.BaseResource import \
     BaseResource, sends_response, throws_resource_errors
@@ -41,7 +42,7 @@ class UserResource(BaseResource):
         USER_ARGS.FIRST_NAME.str, 
         USER_ARGS.LAST_NAME.str,
         USER_ARGS.EMAIL.str,
-        USER_ARGS.ADDRESS_ID.str
+        USER_ARGS.ADDRESS_ID.str,
     )
 
 
@@ -51,8 +52,6 @@ class UserResource(BaseResource):
 
     @classmethod
     def clean_user(cls, user):
-        #if USER_ARGS.PASSWORD_HASH.str in user:
-        #    del user[USER_ARGS.PASSWORD_HASH.str]
         return {k: v for k, v in user.items() if k in cls.allowed_response_fields}
 
     @throws_resource_errors
@@ -132,9 +131,6 @@ class UserResource(BaseResource):
             yield EmailAlreadyInUse()
         
         user = self.clean_user(user)
-        #client_response = self.notify_clients(of = USER_CREATION, content = user)
-        #yield client_response
-
         yield user, 201
 
     @sends_response
@@ -211,3 +207,12 @@ class UserResource(BaseResource):
     def delete_address(self, _id):
         user = self.user_model.delete_address(_id)
         yield self.clean_user(user), 200
+
+    @sends_response
+    def get_id_before_execute(self, user_args, func):
+        users = self._find(user_args = user_args)
+        yield users
+        if len(users) != 1:
+            yield UserNotFound()
+        _id = users[0][USER_ARGS.ID.str]
+        return func(_id)
