@@ -231,9 +231,9 @@ def users_in_address_route(_id):
             )
         )
 
-# Routes for log-in procedure
 
-# sign-in and sign out
+
+#region Routes for sign-in procedure
 @app.route('/users/auth', methods = ['GET', 'DELETE'])
 @returns_json_response
 def auth_token_from_user_args():
@@ -242,7 +242,6 @@ def auth_token_from_user_args():
     if request.method == 'DELETE':
         return authenticator.delete_token(user_args = user_args())
 
-# sign-in and sign out
 @app.route('/users/<string:_id>/auth', methods = ['GET', 'DELETE'])
 @returns_json_response
 def auth_token_from_user_id(_id):
@@ -250,6 +249,7 @@ def auth_token_from_user_id(_id):
         return authenticator.create_token(_id, token_args = token_args())
     if request.method == 'DELETE':
         return authenticator.delete_token(_id, token_args = token_args())
+#endregion
 
 @app.route('/users/<string:_id>/auth/verify', methods = ['GET'])
 @returns_json_response
@@ -261,9 +261,6 @@ def verify_auth_token_from_id(_id):
 def page_not_found(e):
     return {'message': "Page not found", 'description': str(e)}, 404
 
-# subscribtion to changes
-# send on creation/delete
-# user_id_list
 
 if __name__ == '__main__':
     app.run(debug=True)

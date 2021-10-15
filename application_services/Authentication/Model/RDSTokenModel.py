@@ -51,7 +51,9 @@ class RDSTokenModel(BaseTokenModel):
             "userID": user_id, 
             'token': token
         })
-        return rec is not None
+
+        print("validate: ", rec)
+        return rec is not None and list(rec) != []
 
     @classmethod
     def delete(cls, token):
