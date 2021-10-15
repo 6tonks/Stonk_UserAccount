@@ -33,12 +33,11 @@ class Authenticator(BaseResource):
         yield user
         yield user[USER_ARGS.ID.str]
 
-
     @sends_response
     def create_token(self, user_id =  None, user_args = None):
         user_id = self.get_user_id(user_id, user_args)
         yield user_id
-        res = {"Authentication Token": self.token_model.create(user_id)}
+        res = {"user_id": user_id, "Authentication Token": self.token_model.create(user_id)}
         yield res, 200
 
     @sends_response

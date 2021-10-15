@@ -231,8 +231,6 @@ def users_in_address_route(_id):
             )
         )
 
-
-
 #region Routes for sign-in procedure
 @app.route('/users/auth', methods = ['GET', 'DELETE'])
 @returns_json_response
