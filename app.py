@@ -1,75 +1,44 @@
-from os import stat
-from re import S
-from flask import Flask, Response, request
+from flask import Flask, request
+from config.response_args import RESPONSE_ARGS
 
-from application_services.UserResource.user_service import USER_ARGS, UserResource
-from application_services.AddressResource.address_service import AddressResource
-from application_services.Authentication.authentication_service import Authenticator
+import config.aws_config as aws_config
+from config.aws_config import SNS_ARNS, SNS_TOPICS
+
+from utils import (
+    user_resource,
+    address_resource,
+    authenticator,
+    user_args,
+    address_args,
+    token_args,
+    returns_json_response,
+    USER_ARGS)
 
 import json
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
 
-from application_services.UserResource.Model.RDSUserModel import RDSUserModel
-from application_services.AddressResource.Model.RDSAddressModel import RDSAddressModel
-from application_services.Authentication.Model.RDSTokenModel import RDSTokenModel
+from middleware.simple_notification_service import send_sns_message
 
-user_resource = UserResource(RDSUserModel, RDSAddressModel)
-address_resource = AddressResource(RDSAddressModel)
-authenticator = Authenticator(RDSTokenModel, user_resource)
+@app.after_request
+def post_request(response):
+    if aws_config.ENABLE_USER_ACTIVITY:
+        body = json.loads(response.get_data())
+        if RESPONSE_ARGS.CREATED.str in body and \
+                body[RESPONSE_ARGS.CREATED.str] == RESPONSE_ARGS.USER.str:
+            id = send_sns_message(SNS_ARNS[SNS_TOPICS.USER_ACTIVITY], json.dumps(body), {})
+            logger.info(f"Created user message with id {id} sent")
+        if RESPONSE_ARGS.DELETED.str in body and \
+                body[RESPONSE_ARGS.DELETED.str] == RESPONSE_ARGS.USER.str:
+            id = send_sns_message(SNS_ARNS[SNS_TOPICS.USER_ACTIVITY], json.dumps(body), {})
+            logger.info(f"Deleted user message with id {id} sent")
 
-@app.route('/')
-def hello_world():  # put application's code here
-    return 'Hello World!'
-
-def args_from_route(field_to_query):
-    return {field: value \
-        for field, query_names in field_to_query.items() \
-        for value in (request.args.get(q_name) for q_name in query_names)\
-        if value is not None
-    }
-
-def user_args():
-    return args_from_route({
-        "nameFirst": ("nameFirst", "firstName", "first_name", "name_first"),
-        "nameLast": ("nameLast", "lastName", "last_name", "name_last"),
-        "email": ("email", "Email", "e-mail"),
-        "password": ("password",)
-    })
-
-from application_services.AddressResource.address_service import ADDRESS_ARGS
-def address_args(_id = None):
-    args = args_from_route({
-        ADDRESS_ARGS.FIRST_LINE.str: ("address_first_line", "first_line", "addressFirstLine", "firstLine"),
-        ADDRESS_ARGS.SECOND_LINE.str: ("address_second_line", "second_line", "addressSecondLine", "secondLine"),
-        ADDRESS_ARGS.CITY.str: ("address_city", "city", "addressCity"),
-        ADDRESS_ARGS.STATE.str: ("address_state", "state", "addressState"),
-        ADDRESS_ARGS.ZIP_CODE.str: ("address_zip_code", "zip_code", "addressZipCode", "zipCode"),
-        ADDRESS_ARGS.COUNTRY_CODE.str: ("address_country_code", "country_code", "addressCountryCode", "countryCode")
-    })
-    if _id is not None:
-        args['addressId'] = _id
-    return args
-
-def token_args():
-    return args_from_route({
-        "token": ("token", "auth_token", "authToken")
-    })
-
-def create_json_response(res, status):
-    return Response(json.dumps(res), status=status, content_type="application/json")
-
-def returns_json_response(func):
-    def wrapper(*args, **kwargs):
-        return create_json_response(*func(*args, **kwargs))
-    wrapper.__name__ = func.__name__
-    return wrapper
-
+    return response
 
 @app.route('/')
 @returns_json_response
@@ -90,10 +59,9 @@ def index():
                 'href': '/addresses'
             }
         ]
-    
     }, 200
 
-@app.route('/users', methods=['POST', 'GET'])
+@app.route('/users', methods=['GET', 'POST'])
 @returns_json_response
 def users_route():
     """
@@ -174,7 +142,7 @@ def user_address_route(_id):
         user_params = user_args()
         return user_resource.delete_address(_id, user_params["password"])
 
-@app.route('/addresses', methods=['GET', 'PUT', 'DELETE'])
+@app.route('/addresses', methods=['GET', 'PUT'])
 @returns_json_response
 def addresses_route():
     if request.method == 'GET':

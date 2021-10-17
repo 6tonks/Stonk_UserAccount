@@ -1,8 +1,10 @@
 from typing import Tuple
 from dataclasses import dataclass
 from enum import Enum
-from application_services.AddressResource.address_service import ADDRESS_ARGS
 
+from config.response_args import RESPONSE_ARGS
+
+from application_services.AddressResource.address_service import ADDRESS_ARGS
 from application_services.BaseResource import \
     BaseResource, sends_response, throws_resource_errors
 from application_services.UserResource.UserError import *
@@ -131,7 +133,10 @@ class UserResource(BaseResource):
             yield EmailAlreadyInUse()
         
         user = self.clean_user(user)
-        yield user, 201
+        yield {
+            RESPONSE_ARGS.CREATED.str: RESPONSE_ARGS.USER.str, 
+            RESPONSE_ARGS.OBJECT_INFO.str: user
+        }, 201
 
     @sends_response
     def find(self, user_args = {}, address_args = {}):
@@ -172,7 +177,12 @@ class UserResource(BaseResource):
         users = self.user_model.delete(_id)
         if len(users):
             yield UserCouldNotBeRemoved()
-        yield {'Sucessfully Removed': True}, 200
+        yield {
+            RESPONSE_ARGS.DELETED.str: RESPONSE_ARGS.USER.str,
+            RESPONSE_ARGS.OBJECT_INFO.str: {
+                USER_ARGS.ID.str: _id
+            }
+        }, 200
 
     @sends_response
     def find_address(self, _id):

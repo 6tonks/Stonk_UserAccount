@@ -1,7 +1,33 @@
 from abc import ABC
+from enum import Enum, auto
 from typing import Dict, List, Tuple
 from dataclasses import dataclass, field
 
+from config.response_args import RESPONSE_ARGS
+
+def sends_app_service_reponse(func):
+    def wraper(*args, **kwargs):
+        last_output = None
+        for output in func(*args, **kwargs):
+            last_output = output
+            if isinstance(output, ResourceError):
+                if not isinstance(output, ResourceErrorCollection):
+                    output = ResourceErrorCollection(output)
+                return output
+        return last_output
+    return wraper 
+
+def throws_resource_errors(func):
+    return sends_app_service_reponse(func)
+
+def sends_response(func):
+    func = throws_resource_errors(func)
+    def wraper(*args, **kwargs):
+        output = func(*args, **kwargs)
+        if isinstance(output, ResourceError):
+            return output.response(), output.status
+        return output
+    return wraper
 
 class ResourceError(ABC):
     code: int
@@ -74,29 +100,6 @@ class InvalidArguement(ResourceError):
             self.description = ""
         else:
             self.description = self.description.format(value = value, arg = arg)
-
-def throws_resource_errors(func):
-    def wraper(*args, **kwargs):
-        last_output = None
-        for output in func(*args, **kwargs):
-            last_output = output
-            if isinstance(output, ResourceError):
-                if not isinstance(output, ResourceErrorCollection):
-                    output = ResourceErrorCollection(output)
-                return output
-        return last_output
-
-    return wraper 
-
-def sends_response(func):
-    func = throws_resource_errors(func)
-    def wraper(*args, **kwargs):
-        output = func(*args, **kwargs)
-        if isinstance(output, ResourceError):
-            return output.response(), output.status
-        return output
-
-    return wraper
 
 class BaseResource(ABC):
 
