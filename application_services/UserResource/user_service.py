@@ -201,9 +201,9 @@ class UserResource(BaseResource):
         new_address = None
         # no address, insert new record
         if addressID == 0:
-            print("creating new address record for user, userID: " + _userId)
+            print("creating new address record for user, userID: ", _userId)
             addressID = self.address_model.create(address_args)
-            print("new address record created, addressID: " + addressID)
+            print("new address record created, addressID: ", addressID)
             #also update user table
             self.user_model.update(_userId, {"addressID" : addressID})
         else: # update

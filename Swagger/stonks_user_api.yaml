@@ -70,11 +70,95 @@ paths:
       tags:
         - "users"
       summary: "Get specific user details with its id"
-      description: "Get id for specific user"
       parameters:
       - name: userId
         in: path
         description: user id to lookup
+        required: true
+        type: string
+      responses:
+        "200":
+          description: "OK"
+          # to do
+        "400":
+          description: "Invalid status value"
+    put:
+      tags:
+        - "users"
+      summary: "Update user data, token is required"
+      parameters:
+      - name: userId
+        in: path
+        description: user id to lookup
+        required: true
+        type: string
+      - name: token
+        in: query
+        description: token for access user's data (call /users/auth to get the token and id)
+        required: true
+        type: string
+      - name: password
+        in: query
+        description: password to set
+        required: false
+        type: string
+      - name: nameFirst
+        in: query
+        description: nameFirst to set
+        required: false
+        type: string
+      - name: nameLast
+        in: query
+        description: nameLast to set
+        required: false
+        type: string
+      - name: email
+        in: query
+        description: email to set
+        required: false
+        type: string
+      responses:
+        "200":
+          description: "OK"
+          # to do
+        "400":
+          description: "Invalid status value"
+  
+  
+  /users/auth:
+    get:
+      tags:
+        - "users"
+      summary: "Sign-in with email and address"
+      parameters:
+      - name: email
+        in: query
+        description: user email to login
+        required: true
+        type: string
+      - name: password
+        in: query        
+        required: true
+        type: string
+      responses:
+        "200":
+          description: "OK"
+          # to do
+        "400":
+          description: "Invalid status value"
+  /users/{userId}/auth/verify:
+    get:
+      tags:
+        - "users"
+      summary: "Verify user token"
+      parameters:
+      - name: userId
+        in: path
+        description: user id
+        required: true
+        type: string
+      - name: token
+        in: query        
         required: true
         type: string
       responses:
@@ -95,6 +179,7 @@ paths:
         description: user id to lookup
         required: true
         type: string
+      # should have token actually
       - name: countryCode
         in: query        
         required: false
@@ -128,7 +213,7 @@ paths:
   /addresses:
     get:
       tags:
-        - "addresses"
+        - "address"
       summary: "Returns all addresses"
       responses:
         "200":
@@ -139,7 +224,7 @@ paths:
   /addresses/{addressesId}:
     get:
       tags:
-        - "addresses"
+        - "address"
       summary: "Get address by address id"
       parameters:
       - name: addressesId
