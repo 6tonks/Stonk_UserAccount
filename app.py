@@ -1,8 +1,10 @@
 from flask import Flask, request
-from config.response_args import RESPONSE_ARGS
 
+from config.response_args import RESPONSE_ARGS
 import config.aws_config as aws_config
 from config.aws_config import SNS_ARNS, SNS_TOPICS
+
+from middleware.simple_notification_service import send_sns_message
 
 from utils import (
     user_resource,
@@ -23,10 +25,9 @@ logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
 
-from middleware.simple_notification_service import send_sns_message
-
 @app.after_request
 def post_request(response):
+    # Check URL to see if it matchs SNS config
     if aws_config.ENABLE_USER_ACTIVITY:
         body = json.loads(response.get_data())
         if RESPONSE_ARGS.CREATED.str in body and \
