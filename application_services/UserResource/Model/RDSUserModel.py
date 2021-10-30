@@ -35,15 +35,13 @@ class RDSUserModel(BaseUserModel):
                                                   },
                                                   True
                                                   )
+            print("RDSUserModel", "New User Added Success, UserPK: ", user_PK)
+            return cls.find_by_template(user_args)[0]
         except pymysql.Error as e:
             print("RDSUserModel: ", "SQL exception: ", e)
             if e.args[0] == cls.Duplicate_Entry_ErrorCode:
                 print(RDSUserModel, "Duplicate entry (probably email)")
                 raise UserEmailExistsException("email_already_exist")
-                return None
-
-        print("RDSUserModel", "New User Added Success, UserPK: ", user_PK)
-        return user_args
 
     @classmethod
     def find_by_template(cls, user_args: Dict[str, str]) -> List[Dict[str, str]]:
