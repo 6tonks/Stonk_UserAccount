@@ -1,4 +1,5 @@
 from flask import Flask, request
+from flask_cors import CORS
 
 from config.response_args import RESPONSE_ARGS
 import config.aws_config as aws_config
@@ -24,6 +25,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
+CORS(app)
 
 @app.after_request
 def post_request(response):
