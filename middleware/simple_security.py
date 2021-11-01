@@ -1,31 +1,54 @@
+from dataclasses import dataclass
 import json
-from utils import token_args
+from utils import token_args, user_args
 from application_services.Authentication.Model.RDSTokenModel import RDSTokenModel
 import re
 
-secure_paths = [
-    "/users/102"
-]
+from typing import Tuple
+from dataclasses import dataclass, field
+
+from utils import (
+    authenticator
+)
+
+@dataclass
+class Rule:
+    path: str
+    methods: Tuple[str] = ("GET",)
+
+    def match(self, path: str, method: str) -> bool:
+        if method.upper() not in self.methods or "ANY" in self.methods:
+            return False
+
+        curr = path.split("/")
+        targ = self.path.split("/")
+        return len(curr) == len(targ) \
+            and all(c==t 
+                for c, t in zip(curr, targ) 
+                if not (len(t) and t[0] == "{" and t[-1]=="}") and not (t=="*"))
+
 public_paths = [
-    "/"
+    Rule("/"),
+    Rule("/users", methods=("GET", "POST")),
+    Rule("/users/auth"),
+    Rule("/users/{user_id}"),
+    Rule("/users/{user_id}/auth"),
+    Rule("/users/{user_id}/auth/verify"),
+    Rule("/users/{user_id}/addresses"),
+    Rule("/addresses", methods=("ANY",)),
+    Rule("/addresses/{address_id}", methods=("ANY",)),
+    Rule("/addresses/{address_id}/users", methods=("ANY",)),
 ]
 
+def check_security(request) -> bool:#, google, blueprint):
 
-def check_security(request):#, google, blueprint):
+    path, method = request.path, request.method
+    for rule in public_paths:
+        if rule.match(path, method):
+            return True
+    
+    _, status = authenticator.validate_token(token_args= token_args(), user_args = user_args())
+    if status >= 200 and status <= 300:
+        return True
 
-    path = request.path
-    result_ok = False
-
-    if path in secure_paths:
-        temp_token_dict = token_args()
-        temp_id = re.search('(?<=\/users\/)[0-9]+', path).group()
-        if temp_token_dict:
-            temp_token = temp_token_dict['token']
-            print(temp_token)
-            if RDSTokenModel.validate(temp_token, temp_id):
-                result_ok = True
-    elif path in public_paths:
-        result_ok = True
-    else:
-        result_ok = False
-    return result_ok
+    return False

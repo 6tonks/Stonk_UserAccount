@@ -5,8 +5,6 @@ from config.response_args import RESPONSE_ARGS
 import config.aws_config as aws_config
 from config.aws_config import SNS_ARNS, SNS_TOPICS
 
-from middleware.simple_notification_service import send_sns_message
-
 from utils import (
     user_resource,
     address_resource,
@@ -15,11 +13,14 @@ from utils import (
     address_args,
     token_args,
     returns_json_response,
-    USER_ARGS)
+    USER_ARGS
+)
+
+import middleware.simple_security as simple_security
+from middleware.simple_notification_service import send_sns_message
 
 import json
 import logging
-import middleware.simple_security as simple_security
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -35,7 +36,6 @@ def before_request_func():
 
     if not result_ok:
         return {"Error": "Invalid authentication token"}, 401
-
 
 @app.after_request
 def post_request(response):
@@ -219,7 +219,7 @@ def auth_token_from_user_args():
     if request.method == 'GET':
         return authenticator.create_token(user_args = user_args())
     if request.method == 'DELETE':
-        return authenticator.delete_token(user_args = user_args())
+        return authenticator.delete_token(user_args = user_args(), token_args=token_args())
 
 @app.route('/users/<string:_id>/auth', methods = ['GET', 'DELETE'])
 @returns_json_response
