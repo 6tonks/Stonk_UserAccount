@@ -19,6 +19,7 @@ from utils import (
 
 import json
 import logging
+import middleware.simple_security as simple_security
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -26,6 +27,15 @@ logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
 CORS(app)
+
+
+@app.before_request
+def before_request_func():
+    result_ok = simple_security.check_security(request)
+
+    if not result_ok:
+        return {"Error": "Invalid authentication token"}, 401
+
 
 @app.after_request
 def post_request(response):
