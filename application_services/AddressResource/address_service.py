@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
-from application_services.BaseResource import BaseResource, sends_response, throws_resource_errors
+from application_services.BaseResource import BaseResource, sends_response, sends_app_service_reponse
 from application_services.AddressResource.Model.BaseAddressModel import BaseAddressModel
 
 from application_services.AddressResource.AddressError import *
@@ -37,7 +37,7 @@ class AddressResource(BaseResource):
         address = self.address_model.create(address_args)
         return address, 201
 
-    @throws_resource_errors
+    @sends_app_service_reponse
     def _find(self, address_args):
         address_args = {f:v for f, v in address_args.items() if v is not None}
         yield self.address_model.find_by_template(address_args)

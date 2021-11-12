@@ -15,13 +15,11 @@ def sends_app_service_reponse(func):
                     output = ResourceErrorCollection(output)
                 return output
         return last_output
-    return wraper 
 
-def throws_resource_errors(func):
-    return sends_app_service_reponse(func)
+    return wraper
 
 def sends_response(func):
-    func = throws_resource_errors(func)
+    func = sends_app_service_reponse(func)
     def wraper(*args, **kwargs):
         output = func(*args, **kwargs)
         if isinstance(output, ResourceError):
@@ -108,7 +106,7 @@ class BaseResource(ABC):
         return {k: v for k, v in args.items() if v is not None}
 
     @classmethod
-    @throws_resource_errors
+    @sends_app_service_reponse
     def ensure_fields_in_args(cls, args, required_fields) -> Tuple[bool, ResourceErrorCollection]:
         args = cls.preprocess_args(args)
         errors = ResourceErrorCollection()

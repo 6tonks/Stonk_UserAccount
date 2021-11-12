@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from application_services.Authentication.Model.BaseTokenModel import BaseTokenModel
-from application_services.BaseResource import BaseResource, ResourceError, sends_response, throws_resource_errors
+from application_services.BaseResource import BaseResource, ResourceError, sends_response, sends_app_service_reponse
 from application_services.UserResource.user_service import USER_ARGS, UserResource
 
 from enum import Enum
@@ -23,7 +23,7 @@ class Authenticator(BaseResource):
     token_model: BaseTokenModel
     user_resource: UserResource
 
-    @throws_resource_errors
+    @sends_app_service_reponse
     def get_user_id(self, user_id, user_args):
         if user_id is not None:
             yield user_id

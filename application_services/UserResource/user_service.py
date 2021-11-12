@@ -6,7 +6,7 @@ from config.response_args import RESPONSE_ARGS
 
 from application_services.AddressResource.address_service import ADDRESS_ARGS
 from application_services.BaseResource import \
-    BaseResource, sends_response, throws_resource_errors
+    BaseResource, sends_response, sends_app_service_reponse
 from application_services.UserResource.UserError import *
 
 from application_services.UserResource.Model.BaseUserModel import BaseUserModel, UserEmailExistsException
@@ -56,18 +56,18 @@ class UserResource(BaseResource):
     def clean_user(cls, user):
         return {k: v for k, v in user.items() if k in cls.allowed_response_fields}
 
-    @throws_resource_errors
+    @sends_app_service_reponse
     def validate_email(self, email):
         regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
         if not re.fullmatch(regex, email):
             yield InvalidEmail()
 
-    @throws_resource_errors
+    @sends_app_service_reponse
     def validate_password(self, password):
         if not PasswordValidator.is_valid(password):
             yield InvalidPassword()
 
-    @throws_resource_errors
+    @sends_app_service_reponse
     def verify_password(self, _id, password):
         users = self._find({USER_ARGS.ID.str: _id})
         yield users
@@ -76,7 +76,7 @@ class UserResource(BaseResource):
         if not PasswordEncrytor.validate(password, password_hash):
             yield IncorrectPassword()
 
-    @throws_resource_errors
+    @sends_app_service_reponse
     def generate_user_creation_fields(self, user_args):
         yield self.ensure_fields_in_args(user_args, self.required_sign_up_fields)
         yield self.validate_email(user_args[USER_ARGS.EMAIL.str])
@@ -89,7 +89,7 @@ class UserResource(BaseResource):
 
         yield create_args
 
-    @throws_resource_errors
+    @sends_app_service_reponse
     def verify(self, user_args):
         """Valids the users information"""
         yield self.ensure_fields_in_args(user_args, [USER_ARGS.EMAIL.str, USER_ARGS.PASSWORD.str])
@@ -107,7 +107,7 @@ class UserResource(BaseResource):
 
         yield user
 
-    @throws_resource_errors
+    @sends_app_service_reponse
     def _find(self, user_args = {}, address_args = {}):
         if USER_ARGS.PASSWORD.str in user_args:
             user_args = user_args.copy()
@@ -172,7 +172,7 @@ class UserResource(BaseResource):
         users = self.user_model.update(_id, user_args)
         yield self.clean_user(users[0]), 200
     
-    @throws_resource_errors
+    @sends_app_service_reponse
     def delete(self, _id):
         users = self.user_model.delete(_id)
         if len(users):
