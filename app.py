@@ -1,6 +1,7 @@
 from flask import Flask, request, redirect, url_for
 from flask_cors import CORS
 from flask_dance.contrib.google import make_google_blueprint, google
+from oauthlib.oauth2 import InvalidGrantError, TokenExpiredError
 
 from config.response_args import RESPONSE_ARGS
 import config.aws_config as aws_config
@@ -74,9 +75,13 @@ def index():
     if not google.authorized:
         print("Google Not Authorized Yet, redirecting")
         return redirect(url_for("google.login"))
-    print("Authorized, getting userinfo")
-    resp = google.get("/oauth2/v3/userinfo")
-    assert resp.ok, resp.text
+
+    try:
+        print("Authorized, getting userinfo")
+        resp = google.get("/oauth2/v3/userinfo")
+        assert resp.ok, resp.text
+    except (InvalidGrantError, TokenExpiredError) as e:  # if token expired, re-login
+        return redirect(url_for("google.login"))
 
     print(resp.text)
     return "You are {email} on Google".format(email=resp.json()["email"])
