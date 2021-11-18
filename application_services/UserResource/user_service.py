@@ -15,7 +15,12 @@ from application_services.AddressResource.Model.BaseAddressModel import BaseAddr
 from application_services.UserResource.password_encryption import PasswordEncrytor
 from application_services.UserResource.password_validation import PasswordValidator
 
+from application_services.Authentication.Model.RDSTokenModel import RDSTokenModel #May consider doing some refactor to keep the design pattern more consistent
+
 import re
+
+import random
+import string
 
 class USER_ARGS(Enum):
     ID = 'userID'
@@ -226,3 +231,44 @@ class UserResource(BaseResource):
             yield UserNotFound()
         _id = users[0][USER_ARGS.ID.str]
         return func(_id)
+
+
+    def google_auth(self,email,given_name, family_name):
+        '''
+        :param email:
+        :param given_name:
+        :param family_name:
+        :return: token
+
+         Will be called after google authed success.
+         Will pass in the email and names gotten from Google account,
+         if there's already an account exist for the email, will return a new token
+         else, will create a new account using the email and name, and return a new token
+        '''
+
+        print("google_auth(), generating token for:  ",email, " - ",given_name, family_name)
+
+        users = self.user_model.find_by_template({"email" : email})
+
+        if len(users) == 0: #No email found, create a new user
+           print("google_auth() user ", email , " not found. Creating a new one")
+           # May consider doing some refactor to keep the design pattern more consistent
+
+           create_user_fields = {USER_ARGS.EMAIL.str: email,
+                                 # Some dummy random text for pw hash,
+                                 # not the most elegant way but should work fine
+                                 USER_ARGS.PASSWORD_HASH.str: (''.join(random.choice(string.ascii_letters) for i in range(60))),
+                                 USER_ARGS.LAST_NAME.str: family_name,
+                                 USER_ARGS.FIRST_NAME.str: given_name
+                                 }
+
+           new_user = self.user_model.create(create_user_fields)
+           print("google_auth() new user created:", new_user)
+           userID = new_user['userID']
+           new_token = RDSTokenModel.refresh_token(RDSTokenModel, user_id=userID)
+           return userID, new_token
+        else: #Email already exist in database, refresh the token
+            print("google_auth() user ", email, " found. Refreshing token")
+            userID = users[0]['userID']
+            new_token = RDSTokenModel.refresh_token(RDSTokenModel,user_id=userID)  # May consider doing some refactor to keep the design pattern more consistent
+            return userID, new_token

@@ -248,10 +248,12 @@ blueprint = make_google_blueprint(
     client_id=google_auth_client_id,
     client_secret=google_auth_client_secrete,
     scope=["profile", "email"],
-    redirect_url=google_auth_url # will need to re-direct to the google login url to get the user's info
+    redirect_url=google_auth_url  # Will need to re-direct to the google login url after login success to get the user's info
 )
 app.register_blueprint(blueprint, url_prefix="/login")
 print("Google Log-in Setup completed")
+
+
 # Google Aouth Setup End
 
 @app.route(google_auth_url)
@@ -261,23 +263,35 @@ def google_sign_in():
         return redirect(url_for("google.login"))
 
     try:
-        print("Authorized, getting userinfo")
+        print("Google login authorized, getting userinfo")
         resp = google.get("/oauth2/v3/userinfo")
         assert resp.ok, resp.text
     except (InvalidGrantError, TokenExpiredError) as e:  # if token expired, re-login
+        print("Google login expired, re-directing")
         return redirect(url_for("google.login"))
 
     print("Google Login Success, User Info:", resp.text)
 
-    return {
-        'message': "You are {email} on Google".format(email=resp.json()["email"])
-    }, 200
-#endregion
+    email = resp.json()["email"]
+    given_name = resp.json()["given_name"]
+    family_name = resp.json()["family_name"]
 
-@app.route('/users/<string:_id>/auth/verify', methods = ['GET'])
+    user_id, new_token = user_resource.google_auth(email=email, given_name=given_name, family_name=family_name)
+    print(user_id, new_token)
+    return {
+               'token': new_token,
+               'userID': user_id,
+               'message': "Logged in with google as: " + email
+           }, 200
+
+
+# endregion
+
+@app.route('/users/<string:_id>/auth/verify', methods=['GET'])
 @returns_json_response
 def verify_auth_token_from_id(_id):
-    return authenticator.validate_token(_id, token_args = token_args())
+    return authenticator.validate_token(_id, token_args=token_args())
+
 
 @app.errorhandler(404)
 @returns_json_response
