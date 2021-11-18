@@ -1,5 +1,7 @@
-from flask import Flask, request
+from flask import Flask, request, redirect, url_for
 from flask_cors import CORS
+from flask_dance.contrib.google import make_google_blueprint, google
+from oauthlib.oauth2 import InvalidGrantError, TokenExpiredError
 
 from config.response_args import RESPONSE_ARGS
 import config.aws_config as aws_config
@@ -29,7 +31,7 @@ logger.setLevel(logging.INFO)
 app = Flask(__name__)
 CORS(app)
 
-
+'''
 @app.before_request
 def before_request_func():
     result_ok = simple_security.check_security(request)
@@ -52,7 +54,7 @@ def post_request(response):
             logger.info(f"Deleted user message with id {id} sent")
 
     return response
-
+'''
 @app.route('/')
 @returns_json_response
 def index():
@@ -228,6 +230,48 @@ def auth_token_from_user_id(_id):
         return authenticator.create_token(_id, token_args = token_args())
     if request.method == 'DELETE':
         return authenticator.delete_token(_id, token_args = token_args())
+#endregion
+
+# region Google log-in
+
+# Google Aouth Setup
+google_auth_url = "/google-auth"
+
+print("Setting Up Google Log-in")
+app.secret_key = "supersekrit" # not sure what is this for, copied from the flask dance Google QuickStart demo
+
+#Should make these value in the config files later
+google_auth_client_id = "215644746058-ph2rhktakkpoho2s5p8v4mntfd198p4m.apps.googleusercontent.com"
+google_auth_client_secrete = "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"
+
+blueprint = make_google_blueprint(
+    client_id=google_auth_client_id,
+    client_secret=google_auth_client_secrete,
+    scope=["profile", "email"],
+    redirect_url=google_auth_url # will need to re-direct to the google login url to get the user's info
+)
+app.register_blueprint(blueprint, url_prefix="/login")
+print("Google Log-in Setup completed")
+# Google Aouth Setup End
+
+@app.route(google_auth_url)
+def google_sign_in():
+    if not google.authorized:
+        print("Google Not Authorized Yet, redirecting")
+        return redirect(url_for("google.login"))
+
+    try:
+        print("Authorized, getting userinfo")
+        resp = google.get("/oauth2/v3/userinfo")
+        assert resp.ok, resp.text
+    except (InvalidGrantError, TokenExpiredError) as e:  # if token expired, re-login
+        return redirect(url_for("google.login"))
+
+    print("Google Login Success, User Info:", resp.text)
+
+    return {
+        'message': "You are {email} on Google".format(email=resp.json()["email"])
+    }, 200
 #endregion
 
 @app.route('/users/<string:_id>/auth/verify', methods = ['GET'])
