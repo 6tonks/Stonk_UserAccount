@@ -1,5 +1,6 @@
-from flask import Flask, request
+from flask import Flask, request, redirect, url_for
 from flask_cors import CORS
+from flask_dance.contrib.google import make_google_blueprint, google
 
 from config.response_args import RESPONSE_ARGS
 import config.aws_config as aws_config
@@ -29,7 +30,17 @@ logger.setLevel(logging.INFO)
 app = Flask(__name__)
 CORS(app)
 
+###Google Aouth Setup
+app.secret_key = "supersekrit" # not sure what is this for, copied from the flask dance Google QuickStart demo
+blueprint = make_google_blueprint(
+    client_id="215644746058-ph2rhktakkpoho2s5p8v4mntfd198p4m.apps.googleusercontent.com",
+    client_secret="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",
+    scope=["profile", "email"]
+)
+app.register_blueprint(blueprint, url_prefix="/login")
+###
 
+'''
 @app.before_request
 def before_request_func():
     result_ok = simple_security.check_security(request)
@@ -53,9 +64,23 @@ def post_request(response):
 
     return response
 
+'''
+#@returns_json_response
 @app.route('/')
-@returns_json_response
 def index():
+
+
+
+    if not google.authorized:
+        print("Google Not Authorized Yet, redirecting")
+        return redirect(url_for("google.login"))
+    print("Authorized, getting userinfo")
+    resp = google.get("/oauth2/v3/userinfo")
+    assert resp.ok, resp.text
+
+    print(resp.text)
+    return "You are {email} on Google".format(email=resp.json()["email"])
+'''
     return {
         'message': "Wellcome to the Stonks! user service",
         'links': [
@@ -73,6 +98,7 @@ def index():
             }
         ]
     }, 200
+'''
 
 @app.route('/users', methods=['GET', 'POST'])
 @returns_json_response
