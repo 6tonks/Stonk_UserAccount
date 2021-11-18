@@ -38,6 +38,9 @@ public_paths = [
     Rule("/addresses", methods=("ANY",)),
     Rule("/addresses/{address_id}", methods=("ANY",)),
     Rule("/addresses/{address_id}/users", methods=("ANY",)),
+    Rule("/google-auth"),
+    Rule("/login/google"),
+    Rule("/login/google/authorized"),
 ]
 
 def check_security(request) -> bool:#, google, blueprint):

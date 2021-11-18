@@ -31,7 +31,7 @@ logger.setLevel(logging.INFO)
 app = Flask(__name__)
 CORS(app)
 
-'''
+
 @app.before_request
 def before_request_func():
     result_ok = simple_security.check_security(request)
@@ -43,18 +43,22 @@ def before_request_func():
 def post_request(response):
     # Check URL to see if it matchs SNS config
     if aws_config.ENABLE_USER_ACTIVITY:
-        body = json.loads(response.get_data())
-        if RESPONSE_ARGS.CREATED.str in body and \
-                body[RESPONSE_ARGS.CREATED.str] == RESPONSE_ARGS.USER.str:
-            id = send_sns_message(SNS_ARNS[SNS_TOPICS.USER_ACTIVITY], json.dumps(body), {})
-            logger.info(f"Created user message with id {id} sent")
-        if RESPONSE_ARGS.DELETED.str in body and \
-                body[RESPONSE_ARGS.DELETED.str] == RESPONSE_ARGS.USER.str:
-            id = send_sns_message(SNS_ARNS[SNS_TOPICS.USER_ACTIVITY], json.dumps(body), {})
-            logger.info(f"Deleted user message with id {id} sent")
+        #if the response is not in json format, pass
+        try:
+            body = json.loads(response.get_data())
+            if RESPONSE_ARGS.CREATED.str in body and \
+                    body[RESPONSE_ARGS.CREATED.str] == RESPONSE_ARGS.USER.str:
+                id = send_sns_message(SNS_ARNS[SNS_TOPICS.USER_ACTIVITY], json.dumps(body), {})
+                logger.info(f"Created user message with id {id} sent")
+            if RESPONSE_ARGS.DELETED.str in body and \
+                    body[RESPONSE_ARGS.DELETED.str] == RESPONSE_ARGS.USER.str:
+                id = send_sns_message(SNS_ARNS[SNS_TOPICS.USER_ACTIVITY], json.dumps(body), {})
+                logger.info(f"Deleted user message with id {id} sent")
+        except:
+            print("post_request(), response is not in json format. response: ", response.get_data())
 
     return response
-'''
+
 @app.route('/')
 @returns_json_response
 def index():
