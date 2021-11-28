@@ -1,4 +1,4 @@
-# Stonk User Account S
+# Stonk User Account Service
 
 Webservice that manages users for Stonks application, including sign-up, sign-in, sign-out as well as address management.
 
