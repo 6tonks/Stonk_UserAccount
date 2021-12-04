@@ -174,7 +174,7 @@ def addresses_route():
                 }
             ]
         return resp, status
-    if request.method == 'POST':
+    if request.method == 'PUT':
         return address_resource.create(address_args = address_args())
 
 @app.route('/addresses/<string:_id>', methods=['GET', 'PUT', 'DELETE'])
