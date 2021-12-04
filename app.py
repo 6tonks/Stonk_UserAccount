@@ -168,7 +168,7 @@ def addresses_route():
                 }
             ]
         return resp, status
-    if request.method == 'POST':
+    if request.method == 'PUT':
         return address_resource.create(address_args = address_args())
 
 @app.route('/addresses/<string:_id>', methods=['GET', 'PUT', 'DELETE'])
@@ -239,7 +239,6 @@ def verify_auth_token_from_id(_id):
 @returns_json_response
 def page_not_found(e):
     return {'message': "Page not found", 'description': str(e)}, 404
-
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True)

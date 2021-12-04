@@ -17,7 +17,7 @@ class Rule:
     methods: Tuple[str] = ("GET",)
 
     def match(self, path: str, method: str) -> bool:
-        if method.upper() not in self.methods or "ANY" in self.methods:
+        if (method.upper() not in self.methods) and ("ANY" not in self.methods):
             return False
 
         curr = path.split("/")

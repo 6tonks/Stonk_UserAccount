@@ -7,6 +7,8 @@ from application_services.AddressResource.Model.BaseAddressModel import BaseAddr
 
 from application_services.AddressResource.AddressError import *
 
+import middleware.smarty_streets as smarty_streets
+
 class ADDRESS_ARGS(Enum):
     ID = 'addressID'
     FIRST_LINE = 'firstLine'
@@ -33,9 +35,11 @@ class AddressResource(BaseResource):
 
     @sends_response
     def create(self, address_args):
+        address_args = smarty_streets.get_valid_address(address_args)
         yield self.ensure_fields_in_args(address_args, self.required_address_fields)
+
         address = self.address_model.create(address_args)
-        return address, 201
+        yield {"success": 1, "links": {"rel": 'resource', 'href': f'addresses/{address}'}}, 201
 
     @throws_resource_errors
     def _find(self, address_args):
