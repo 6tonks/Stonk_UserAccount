@@ -13,7 +13,7 @@ Webservice that manages users for Stonks application, including sign-up, sign-in
 ***Important*** : Do not stop the EC2 instance, which will cause the hostname to be changed when next time started, and break the connection to the API gateway.
 
 ## To Test The API
-Please use this Swagger Link to test the API. (This Swagger page will cal the user service API through the CloudFront domain)
+Please use this Swagger Link to test the API. (This Swagger page will call the user service API through the CloudFront domain)
 https://app.swaggerhub.com/apis-docs/pies2/stonk-user_service_api/1.0.0#/
 ### Notes:
 1. The "/users/{userId}" is removed from the API swagger for now as it's having some issue
