@@ -18,7 +18,6 @@ from utils import (
     USER_ARGS
 )
 
-import middleware.simple_security as simple_security
 from middleware.simple_notification_service import send_sns_message
 
 import json
@@ -30,14 +29,6 @@ logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
 CORS(app)
-
-
-@app.before_request
-def before_request_func():
-    result_ok = simple_security.check_security(request)
-
-    if not result_ok:
-        return {"Error": "Invalid authentication token"}, 401
 
 @app.after_request
 def post_request(response):

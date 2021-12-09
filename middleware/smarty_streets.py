@@ -1,7 +1,7 @@
 from typing import Dict
 import requests
 
-import local
+import config.local as local
 import json
 
 """https://us-street.api.smartystreets.com/street-address?
@@ -14,9 +14,9 @@ import json
 	candidates=10"""
 
 base_url = 'https://us-street.api.smartystreets.com/street-address'
-auth_id = getattr(local, "smarty_streets_auth_id")
-auth_token = getattr(local, "smarty_streets_auth_token")
-license = getattr(local, "smarty_streets_license")
+auth_id = getattr(local, "smarty_streets_info").get("smarty_streets_auth_id")
+auth_token = getattr(local, "smarty_streets_info").get("smarty_streets_auth_token")
+license = getattr(local, "smarty_streets_info").get("smarty_streets_license")
 
 FIRST_LINE = 'firstLine'
 SECOND_LINE = 'secondLine'

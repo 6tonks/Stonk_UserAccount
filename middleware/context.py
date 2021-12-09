@@ -4,7 +4,7 @@ import logging
 
 # This is a bad place for this import
 import pymysql
-import config.db_config as config
+import config.local as local
 
 
 # region logger
@@ -20,9 +20,9 @@ def get_db_info():
     :return: A dictionary with connect info for MySQL
     """
 
-    db_host = config.db_connect_info['DBHOST']
-    db_user = config.db_connect_info['DBUSER']
-    db_password = config.db_connect_info['DBPASSWORD']
+    db_host = local.db_connect_info['DBHOST']
+    db_user = local.db_connect_info['DBUSER']
+    db_password = local.db_connect_info['DBPASSWORD']
 
     """
     db_host = os.environ.get("DBHOST", None)
