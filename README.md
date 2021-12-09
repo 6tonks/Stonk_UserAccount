@@ -13,11 +13,11 @@ Webservice that manages users for Stonks application, including sign-up, sign-in
 ***Important*** : Do not stop the EC2 instance, which will cause the hostname to be changed when next time started, and break the connection to the API gateway.
 
 ## To Test The API
-Please use this Swagger Link to test the API. (This Swagger page will call the user service API through the CloudFront domain)
+Please use this Swagger Link to test the API. (This Swagger page will cal the user service API through the CloudFront domain)
 https://app.swaggerhub.com/apis-docs/pies2/stonk-user_service_api/1.0.0#/
 ### Notes:
 1. The "/users/{userId}" is removed from the API swagger for now as it's having some issue
-2. Google Login only work on local now, but as [this post]([https:/](https://edstem.org/us/courses/13500/discussion/851335)/) mentioned, testing it on EC2 isn't required.
+2. Google Login only work on local now, but as [this post](https://edstem.org/us/courses/13500/discussion/851335) mentioned, testing it on EC2 isn't required.
 If you want to test it locally, please refer to the ***Test Google Login Locally*** section below.
 
 #### Test Google Login Locally:
