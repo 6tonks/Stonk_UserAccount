@@ -54,8 +54,9 @@ def post_request(response):
                     body[RESPONSE_ARGS.DELETED.str] == RESPONSE_ARGS.USER.str:
                 id = send_sns_message(SNS_ARNS[SNS_TOPICS.USER_ACTIVITY], json.dumps(body), {})
                 logger.info(f"Deleted user message with id {id} sent")
-        except:
-            print("post_request(), response is not in json format. response: ", response.get_data())
+        except Exception as e:
+            print("post_request() encounter an exception,  this may be caused by response.get_data() is not in json format. response: ", response.get_data())
+            print("post_request() exception", e)
 
     return response
 
